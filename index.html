@@ -300,6 +300,8 @@ const SAMPLE_WORDS = {
 };
 
 // ===== APP STATE =====
+let firestoreWords = {}; // Firestore에서 불러온 단어 데이터
+
 let state = {
   currentDay: null,
   todayType: null, // 'learn' | 'review'
@@ -522,11 +524,11 @@ async function loadSavedSession() {
 }
 
 function getWords(day) {
-  return SAMPLE_WORDS[day]?.words || SAMPLE_WORDS[1].words;
+  return firestoreWords[day]?.words || SAMPLE_WORDS[day]?.words || SAMPLE_WORDS[1].words;
 }
 
 function getDayTitle(day) {
-  return SAMPLE_WORDS[day]?.title || 'Words';
+  return firestoreWords[day]?.title || SAMPLE_WORDS[day]?.title || 'Words';
 }
 
 // ===== RENDER HOME =====
@@ -1067,7 +1069,17 @@ function showGallery() {
 }
 
 // ===== INIT =====
+async function loadWords() {
+  try {
+    const snapshot = await db.collection('words').get();
+    snapshot.forEach(doc => {
+      firestoreWords[doc.id] = doc.data();
+    });
+  } catch(e) {}
+}
+
 async function init() {
+  await loadWords();
   await loadState();
   await loadSchedule();
   await loadSavedSession();
