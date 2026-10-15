@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>본's 영어단어 - 부모 관리</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#faf8f5;--card:#fff;--text:#3a3230;--sub:#8a7e76;
+  --accent:#8b7355;--accent2:#c4a67a;--correct:#5a9e6f;--wrong:#c75c5c;
+  --point-color:#6b5344;
+  --shadow:0 2px 16px rgba(80,60,40,.08);
+  --radius:14px;
+}
+html,body{min-height:100%;font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text)}
+body{max-width:640px;margin:0 auto;padding:16px;padding-bottom:100px}
+
+/* Header */
+.header{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding:12px 0}
+.header h1{font-size:20px;font-weight:700;color:var(--accent)}
+.header .sub{font-size:13px;color:var(--sub)}
+
+/* Tabs */
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:20px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 16px;border-radius:10px;background:var(--card);border:1.5px solid #ede8e2;font-size:13px;font-weight:600;color:var(--sub);cursor:pointer;white-space:nowrap;transition:all .2s}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Sections */
+.section{display:none}
+.section.active{display:block}
+.section-title{font-size:17px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* Cards */
+.card{background:var(--card);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card-label{font-size:12px;color:var(--sub);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.card-value{font-size:28px;font-weight:800;color:var(--accent)}
+.card-sub{font-size:13px;color:var(--sub);margin-top:4px}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.stat-card{background:var(--card);border-radius:12px;padding:14px 12px;box-shadow:var(--shadow);text-align:center}
+.stat-val{font-size:22px;font-weight:800;color:var(--accent)}
+.stat-label{font-size:11px;color:var(--sub);margin-top:2px}
+
+/* Calendar / Schedule */
+.schedule-month{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.schedule-month button{width:32px;height:32px;border-radius:8px;background:var(--card);border:1px solid #ede8e2;font-size:16px;cursor:pointer}
+.schedule-month span{font-size:15px;font-weight:700}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px}
+.cal-head{text-align:center;font-size:11px;color:var(--sub);padding:6px 0;font-weight:600}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;font-size:13px;cursor:pointer;border:1.5px solid transparent;transition:all .15s;position:relative}
+.cal-day:hover{background:#f5f0ea}
+.cal-day.today{border-color:var(--accent)}
+.cal-day.empty{pointer-events:none}
+.cal-day .day-num{font-weight:600}
+.cal-day .day-tag{font-size:8px;font-weight:700;margin-top:1px;border-radius:4px;padding:0 4px;line-height:14px}
+.cal-day .day-tag.learn{background:#e8dfd4;color:var(--accent)}
+.cal-day .day-tag.review{background:#d4e4d8;color:var(--correct)}
+.cal-day .day-tag.rest{background:#eee;color:#aaa}
+.cal-day .day-tag.done{background:var(--correct);color:#fff}
+.cal-day.selected{background:#f0e8dc;border-color:var(--accent2)}
+
+/* Schedule editor */
+.sched-editor{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.sched-editor .sel-date{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--accent)}
+.sched-type-btns{display:flex;gap:8px;margin-bottom:10px}
+.sched-type-btn{flex:1;padding:10px;border:1.5px solid #ede8e2;border-radius:10px;background:var(--card);font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s}
+.sched-type-btn.active{border-color:var(--accent);background:#f8f3ed}
+.sched-day-input{display:flex;align-items:center;gap:8px;margin-top:8px}
+.sched-day-input label{font-size:13px;color:var(--sub);white-space:nowrap}
+.sched-day-input input,.sched-day-input select{flex:1;padding:8px 12px;border:1.5px solid #ede8e2;border-radius:8px;font-size:14px;background:var(--card)}
+.sched-day-input input:focus,.sched-day-input select:focus{outline:none;border-color:var(--accent)}
+.sched-review-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sched-review-chip{padding:6px 12px;border-radius:8px;border:1.5px solid #ede8e2;font-size:12px;cursor:pointer;transition:all .15s}
+.sched-review-chip.selected{border-color:var(--accent);background:#f8f3ed;font-weight:600}
+
+/* Button */
+.btn{padding:12px 20px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--card);border:1.5px solid #ede8e2;color:var(--text)}
+.btn-danger{background:#fce8e8;color:var(--wrong)}
+.btn-sm{padding:8px 14px;font-size:12px;border-radius:8px}
+.btn-block{width:100%}
+
+/* History list */
+.history-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #f0ebe5}
+.history-item:last-child{border-bottom:none}
+.history-date{font-size:12px;color:var(--sub);white-space:nowrap;min-width:70px}
+.history-info{flex:1}
+.history-title{font-size:14px;font-weight:600}
+.history-detail{font-size:12px;color:var(--sub);margin-top:2px}
+.history-badge{padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700}
+.badge-complete{background:#e2f0e6;color:var(--correct)}
+.badge-incomplete{background:#fce8e8;color:var(--wrong)}
+
+/* Missed words */
+.missed-word{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f0ebe5}
+.missed-word:last-child{border-bottom:none}
+.missed-en{font-size:15px;font-weight:700}
+.missed-ko{font-size:13px;color:var(--sub)}
+.missed-bar{width:80px;height:6px;background:#ede8e2;border-radius:4px;overflow:hidden;margin-left:auto;margin-right:12px}
+.missed-bar-fill{height:100%;border-radius:4px}
+.missed-pct{font-size:12px;font-weight:700;min-width:36px;text-align:right}
+
+/* Word management */
+.word-table{width:100%;font-size:13px;border-collapse:separate;border-spacing:0}
+.word-table th{text-align:left;padding:8px 10px;font-size:11px;color:var(--sub);font-weight:600;border-bottom:2px solid #ede8e2;position:sticky;top:0;background:var(--card);z-index:1}
+.word-table td{padding:8px 10px;border-bottom:1px solid #f5f0ea;vertical-align:middle}
+.word-table tr:hover td{background:#faf6f0}
+.word-actions{display:flex;gap:4px}
+.word-actions button{width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;font-size:12px;transition:background .15s}
+.word-actions .edit-btn{background:#e8f0ff;color:#4a80c4}
+.word-actions .del-btn{background:#fce8e8;color:var(--wrong)}
+.word-table-wrap{max-height:400px;overflow-y:auto;border-radius:var(--radius);border:1px solid #ede8e2}
+
+.day-selector{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.day-selector select{padding:8px 12px;border:1.5px solid #ede8e2;border-radius:8px;font-size:14px;background:var(--card)}
+.day-selector select:focus{outline:none;border-color:var(--accent)}
+
+/* CSV upload */
+.upload-area{border:2px dashed #d8d0c8;border-radius:var(--radius);padding:28px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px}
+.upload-area:hover{border-color:var(--accent);background:#faf6f0}
+.upload-area .icon{font-size:32px;margin-bottom:8px}
+.upload-area .label{font-size:14px;font-weight:600;margin-bottom:4px}
+.upload-area .hint{font-size:12px;color:var(--sub)}
+.upload-area input{display:none}
+
+/* Add word form */
+.add-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.add-form .full{grid-column:1/-1}
+.add-form input,.add-form textarea{width:100%;padding:10px 12px;border:1.5px solid #ede8e2;border-radius:8px;font-size:14px;background:var(--card);font-family:inherit}
+.add-form input:focus,.add-form textarea:focus{outline:none;border-color:var(--accent)}
+.add-form textarea{resize:vertical;min-height:44px}
+
+/* Reward items */
+.reward-item{display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border-radius:12px;margin-bottom:8px;box-shadow:var(--shadow)}
+.reward-item .r-icon{font-size:24px}
+.reward-item .r-text{flex:1;font-size:14px;font-weight:500}
+.reward-item .r-actions{display:flex;gap:4px}
+.reward-add{display:flex;gap:8px;margin-top:12px}
+.reward-add input{flex:1;padding:10px 14px;border:1.5px solid #ede8e2;border-radius:10px;font-size:14px;background:var(--card)}
+.reward-add input:focus{outline:none;border-color:var(--accent)}
+
+/* Pause */
+.pause-status{display:flex;align-items:center;gap:12px;padding:16px;border-radius:12px;margin-bottom:14px}
+.pause-active{background:#fff3e0;border:1.5px solid #f0c878}
+.pause-inactive{background:#e8f5ec;border:1.5px solid #b8d8c0}
+.pause-dot{width:10px;height:10px;border-radius:50%}
+.pause-dot.on{background:#e8a020}
+.pause-dot.off{background:var(--correct)}
+.pause-info{flex:1}
+.pause-info .title{font-size:14px;font-weight:700}
+.pause-info .detail{font-size:12px;color:var(--sub)}
+.pause-dates{display:flex;gap:10px;align-items:center;margin-top:12px}
+.pause-dates label{font-size:13px;color:var(--sub);white-space:nowrap}
+.pause-dates input{padding:8px 12px;border:1.5px solid #ede8e2;border-radius:8px;font-size:14px;background:var(--card)}
+.pause-dates input:focus{outline:none;border-color:var(--accent)}
+
+/* Edit modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.3);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal-overlay.active{display:flex}
+.modal-box{background:var(--card);border-radius:20px;padding:24px;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(0,0,0,.15)}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:16px}
+.modal-btns{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+
+/* Toast */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;background:var(--text);color:#fff;font-size:14px;font-weight:600;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* Bulk schedule */
+.bulk-info{font-size:13px;color:var(--sub);line-height:1.6;margin-bottom:12px}
+.bulk-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.bulk-row input{width:80px;padding:6px 10px;border:1.5px solid #ede8e2;border-radius:8px;font-size:13px;background:var(--card)}
+.bulk-row span{font-size:13px;color:var(--sub)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🐱 본's 영어단어</h1>
+    <div class="sub">부모 관리 페이지</div>
+  </div>
+</div>
+
+<div class="tabs" id="tabs">
+  <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">대시보드</button>
+  <button class="tab" data-tab="schedule" onclick="switchTab('schedule')">스케줄</button>
+  <button class="tab" data-tab="words" onclick="switchTab('words')">단어 관리</button>
+  <button class="tab" data-tab="rewards" onclick="switchTab('rewards')">보상</button>
+  <button class="tab" data-tab="settings" onclick="switchTab('settings')">설정</button>
+</div>
+
+<!-- ========== DASHBOARD ========== -->
+<div id="sec-dashboard" class="section active">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-val" id="d-streak">0</div>
+      <div class="stat-label">연속 학습일</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="d-completed">0</div>
+      <div class="stat-label">완료한 Day</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="d-total">40</div>
+      <div class="stat-label">전체 Day</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">전체 진도</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+      <div style="flex:1;height:10px;background:#ede8e2;border-radius:6px;overflow:hidden">
+        <div id="d-progress-bar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:6px;width:0%;transition:width .5s"></div>
+      </div>
+      <span id="d-progress-pct" style="font-size:14px;font-weight:700;color:var(--accent)">0%</span>
+    </div>
+  </div>
+
+  <div class="section-title">최근 학습 기록</div>
+  <div class="card">
+    <div id="history-list" style="max-height:320px;overflow-y:auto">
+      <div style="text-align:center;padding:20px;color:var(--sub);font-size:14px">기록을 불러오는 중...</div>
+    </div>
+  </div>
+
+  <div class="section-title">자주 틀리는 단어</div>
+  <div class="card">
+    <div id="missed-list">
+      <div style="text-align:center;padding:20px;color:var(--sub);font-size:14px">데이터를 분석하는 중...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SCHEDULE ========== -->
+<div id="sec-schedule" class="section">
+  <div class="section-title">학습 스케줄 관리</div>
+
+  <div class="card">
+    <div class="schedule-month">
+      <button onclick="changeMonth(-1)">‹</button>
+      <span id="cal-month-label">2026년 10월</span>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+
+  <div class="sched-editor" id="sched-editor" style="display:none">
+    <div class="sel-date" id="sel-date-label">날짜 선택</div>
+    <div class="sched-type-btns">
+      <button class="sched-type-btn" data-type="learn" onclick="setSchedType('learn')">학습 (Day)</button>
+      <button class="sched-type-btn" data-type="review" onclick="setSchedType('review')">복습</button>
+      <button class="sched-type-btn" data-type="rest" onclick="setSchedType('rest')">쉬는 날</button>
+    </div>
+    <div id="sched-detail"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-primary btn-sm" onclick="saveScheduleDay()">저장</button>
+      <button class="btn btn-secondary btn-sm" onclick="deleteScheduleDay()">삭제</button>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:20px">빠른 일정 설정</div>
+  <div class="card">
+    <div class="bulk-info">시작일부터 자동으로 학습 스케줄을 생성합니다.<br>월~목: 학습 (Day 순서대로) / 금~일: 복습</div>
+    <div class="bulk-row">
+      <label style="font-size:13px;color:var(--sub)">시작일</label>
+      <input type="date" id="bulk-start" style="flex:1">
+    </div>
+    <div class="bulk-row">
+      <label style="font-size:13px;color:var(--sub)">시작 Day</label>
+      <input type="number" id="bulk-day" min="1" max="40" value="1" style="width:60px">
+      <span>부터</span>
+    </div>
+    <div class="bulk-row">
+      <label style="font-size:13px;color:var(--sub)">생성 기간</label>
+      <select id="bulk-weeks" style="flex:1;padding:6px 10px;border:1.5px solid #ede8e2;border-radius:8px;font-size:13px;background:var(--card)">
+        <option value="1">1주</option>
+        <option value="2" selected>2주</option>
+        <option value="4">4주</option>
+        <option value="8">8주</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-sm btn-block" onclick="generateBulkSchedule()" style="margin-top:10px">스케줄 자동 생성</button>
+  </div>
+</div>
+
+<!-- ========== WORDS ========== -->
+<div id="sec-words" class="section">
+  <div class="section-title">단어 관리</div>
+
+  <!-- Upload -->
+  <div class="upload-area" onclick="document.getElementById('csv-file').click()">
+    <div class="icon">📄</div>
+    <div class="label">CSV 파일 업로드</div>
+    <div class="hint">형식: Day번호, 제목, 영어, 뜻, 예문 (헤더 포함)</div>
+    <input type="file" id="csv-file" accept=".csv,.txt" onchange="handleCSV(event)">
+  </div>
+
+  <!-- Day selector & word list -->
+  <div class="day-selector">
+    <label style="font-size:14px;font-weight:600">Day</label>
+    <select id="word-day-select" onchange="loadWordDay(this.value)">
+      <option value="">Day 선택</option>
+    </select>
+    <button class="btn btn-secondary btn-sm" onclick="showAddWord()" style="margin-left:auto">+ 단어 추가</button>
+  </div>
+
+  <!-- Add form (hidden) -->
+  <div id="add-word-form" style="display:none" class="card">
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px">새 단어 추가</div>
+    <div class="add-form">
+      <input id="new-en" placeholder="영어 단어">
+      <input id="new-ko" placeholder="한국어 뜻">
+      <input id="new-ex" class="full" placeholder="예문 (영어)">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-secondary btn-sm" onclick="hideAddWord()">취소</button>
+      <button class="btn btn-primary btn-sm" onclick="addWord()">추가</button>
+    </div>
+  </div>
+
+  <!-- Day title edit -->
+  <div id="day-title-editor" style="display:none" class="card">
+    <div style="display:flex;align-items:center;gap:10px">
+      <label style="font-size:13px;font-weight:600;color:var(--sub)">Day 제목:</label>
+      <input id="day-title-input" style="flex:1;padding:8px 12px;border:1.5px solid #ede8e2;border-radius:8px;font-size:14px;background:var(--card)">
+      <button class="btn btn-primary btn-sm" onclick="saveDayTitle()">저장</button>
+    </div>
+  </div>
+
+  <!-- Word table -->
+  <div id="word-table-container"></div>
+</div>
+
+<!-- ========== REWARDS ========== -->
+<div id="sec-rewards" class="section">
+  <div class="section-title">보상 관리</div>
+  <div class="card">
+    <div class="card-label">등록된 보상</div>
+    <div class="card-sub" style="margin-bottom:12px">학습 완료 시 ~20% 확률로 랜덤 등장합니다</div>
+    <div id="reward-list"></div>
+    <div class="reward-add">
+      <input id="new-reward" placeholder="보상 내용 입력 (예: 아이스크림 쿠폰!)">
+      <button class="btn btn-primary btn-sm" onclick="addReward()">추가</button>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:20px">보상 이력</div>
+  <div class="card">
+    <div id="reward-history">
+      <div style="text-align:center;padding:20px;color:var(--sub);font-size:14px">보상 기록이 없습니다</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SETTINGS ========== -->
+<div id="sec-settings" class="section">
+  <div class="section-title">일시정지</div>
+  <div id="pause-section">
+    <div class="pause-status pause-inactive" id="pause-status">
+      <div class="pause-dot off" id="pause-dot"></div>
+      <div class="pause-info">
+        <div class="title" id="pause-title">학습 진행 중</div>
+        <div class="detail" id="pause-detail">정상적으로 학습이 진행되고 있어요</div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="margin-bottom:12px">
+        <button class="btn btn-primary btn-block" id="pause-toggle-btn" onclick="togglePause()">일시정지</button>
+      </div>
+      <div class="pause-dates" id="pause-date-range" style="display:none">
+        <label>종료일:</label>
+        <input type="date" id="pause-until">
+        <button class="btn btn-secondary btn-sm" onclick="setPauseUntil()">설정</button>
+      </div>
+      <div style="font-size:12px;color:var(--sub);margin-top:8px">
+        일시정지하면 학습 화면에 "쉬는 날" 로 표시됩니다.<br>
+        종료일을 설정하면 해당 날짜에 자동으로 해제됩니다.
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:24px">연속 기록 수정</div>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px">
+      <label style="font-size:13px;color:var(--sub)">연속 학습일:</label>
+      <input type="number" id="streak-edit" min="0" style="width:80px;padding:8px;border:1.5px solid #ede8e2;border-radius:8px;font-size:14px">
+      <button class="btn btn-primary btn-sm" onclick="saveStreak()">저장</button>
+    </div>
+    <div style="font-size:12px;color:var(--sub);margin-top:8px">아이가 못한 날이 있어 연속 기록이 끊어진 경우 수동으로 수정할 수 있어요.</div>
+  </div>
+
+  <div class="section-title" style="margin-top:24px">데이터 초기화</div>
+  <div class="card">
+    <button class="btn btn-danger btn-block" onclick="confirmReset()">학습 진도 초기화</button>
+    <div style="font-size:12px;color:var(--sub);margin-top:8px">주의: 모든 학습 기록과 진행 상황이 삭제됩니다. 단어 데이터는 유지됩니다.</div>
+  </div>
+</div>
+
+<!-- ========== EDIT MODAL ========== -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box">
+    <div class="modal-title">단어 수정</div>
+    <div class="add-form">
+      <input id="edit-en" placeholder="영어 단어">
+      <input id="edit-ko" placeholder="한국어 뜻">
+      <input id="edit-ex" class="full" placeholder="예문 (영어)">
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary btn-sm" onclick="closeEditModal()">취소</button>
+      <button class="btn btn-primary btn-sm" onclick="saveEditWord()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+// ===== FIREBASE CONFIG — index.html과 동일하게 설정하세요 =====
+const firebaseConfig = {
+  apiKey: "AIzaSyCSxxPBUIfT0-qzYBg3i7aQWsj4EANq6f8",
+  authDomain: "word-master-997fe.firebaseapp.com",
+  projectId: "word-master-997fe",
+  storageBucket: "word-master-997fe.firebasestorage.app",
+  messagingSenderId: "753484018419",
+  appId: "1:753484018419:web:ae85d7c01f253cebadbd86"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ===== STATE =====
+let appState = { streak:0, completedDays:[], weekCats:[], catStage:0 };
+let scheduleData = {};    // { 'YYYY-MM-DD': {type, day?, reviewDays?} }
+let wordsData = {};       // { dayNum: {title, words:[{en,ko,ex}]} }
+let progressData = [];    // [{date,day,type,results,completed}]
+let rewardsData = [];     // [{id,content}]
+let settingsData = {};    // {paused, pauseUntil}
+
+let calYear, calMonth;
+let selectedDate = null;
+let currentWordDay = null;
+let editingWordIndex = -1;
+
+// ===== TABS =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + tab).classList.add('active');
+}
+
+// ===== TOAST =====
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ===== LOAD DATA =====
+async function loadAppState() {
+  try {
+    const doc = await db.collection('appState').doc('main').get();
+    if (doc.exists) appState = doc.data();
+  } catch(e) { console.error('loadAppState:', e); }
+}
+
+async function loadProgress() {
+  progressData = [];
+  try {
+    const snap = await db.collection('progress').orderBy('date','desc').limit(30).get();
+    snap.forEach(doc => progressData.push({ id: doc.id, ...doc.data() }));
+  } catch(e) { console.error('loadProgress:', e); }
+}
+
+async function loadSchedule() {
+  scheduleData = {};
+  try {
+    const snap = await db.collection('schedule').get();
+    snap.forEach(doc => { scheduleData[doc.id] = doc.data(); });
+  } catch(e) { console.error('loadSchedule:', e); }
+}
+
+async function loadWords() {
+  wordsData = {};
+  try {
+    const snap = await db.collection('words').get();
+    snap.forEach(doc => {
+      const d = doc.data();
+      wordsData[doc.id] = d;
+    });
+  } catch(e) { console.error('loadWords:', e); }
+  populateDaySelector();
+}
+
+async function loadRewards() {
+  rewardsData = [];
+  try {
+    const snap = await db.collection('rewards').get();
+    snap.forEach(doc => rewardsData.push({ id: doc.id, ...doc.data() }));
+  } catch(e) { console.error('loadRewards:', e); }
+}
+
+async function loadSettings() {
+  try {
+    const doc = await db.collection('settings').doc('main').get();
+    if (doc.exists) settingsData = doc.data();
+  } catch(e) { console.error('loadSettings:', e); }
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  document.getElementById('d-streak').textContent = appState.streak || 0;
+  const completed = (appState.completedDays || []).length;
+  document.getElementById('d-completed').textContent = completed;
+
+  // Count total days from words data
+  const totalDays = Math.max(40, Object.keys(wordsData).length);
+  document.getElementById('d-total').textContent = totalDays;
+
+  const pct = Math.round((completed / totalDays) * 100);
+  document.getElementById('d-progress-bar').style.width = pct + '%';
+  document.getElementById('d-progress-pct').textContent = pct + '%';
+
+  renderHistory();
+  renderMissedWords();
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if (progressData.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--sub);font-size:14px">아직 학습 기록이 없어요</div>';
+    return;
+  }
+  el.innerHTML = progressData.map(p => {
+    const dateStr = formatDate(p.date);
+    const typeLabel = p.type === 'learn' ? `Day ${p.day}` : `Day ${(p.days||[]).join(', ')} 복습`;
+    const results = p.results || {};
+    const total = Object.keys(results).length;
+    let correctCount = 0;
+    Object.values(results).forEach(r => {
+      if (typeof r === 'boolean') { if (r) correctCount++; }
+      else if (typeof r === 'object') {
+        const vals = Object.values(r);
+        if (vals.length > 0 && vals.every(v => v)) correctCount++;
+      }
+    });
+    const accuracy = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+    return `
+      <div class="history-item">
+        <div class="history-date">${dateStr}</div>
+        <div class="history-info">
+          <div class="history-title">${typeLabel}</div>
+          <div class="history-detail">정답률 ${accuracy}% (${correctCount}/${total})</div>
+        </div>
+        <span class="history-badge ${p.completed ? 'badge-complete' : 'badge-incomplete'}">${p.completed ? '완료' : '미완료'}</span>
+      </div>`;
+  }).join('');
+}
+
+function renderMissedWords() {
+  const el = document.getElementById('missed-list');
+  // Aggregate wrong answers across all progress
+  const wordStats = {};
+  progressData.forEach(p => {
+    const results = p.results || {};
+    Object.entries(results).forEach(([word, r]) => {
+      if (!wordStats[word]) wordStats[word] = { total: 0, wrong: 0 };
+      wordStats[word].total++;
+      if (typeof r === 'boolean') { if (!r) wordStats[word].wrong++; }
+      else if (typeof r === 'object') {
+        const vals = Object.values(r);
+        if (vals.some(v => !v)) wordStats[word].wrong++;
+      }
+    });
+  });
+
+  const sorted = Object.entries(wordStats)
+    .filter(([,s]) => s.wrong > 0)
+    .sort((a,b) => (b[1].wrong/b[1].total) - (a[1].wrong/a[1].total))
+    .slice(0, 15);
+
+  if (sorted.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--sub);font-size:14px">틀린 단어가 아직 없어요 👍</div>';
+    return;
+  }
+
+  // Look up Korean meaning from words data
+  const allWords = {};
+  Object.values(wordsData).forEach(d => {
+    (d.words || []).forEach(w => { allWords[w.en] = w.ko; });
+  });
+
+  el.innerHTML = sorted.map(([word, s]) => {
+    const pct = Math.round((1 - s.wrong / s.total) * 100);
+    const color = pct >= 70 ? 'var(--correct)' : pct >= 40 ? '#e8a020' : 'var(--wrong)';
+    const ko = allWords[word] || '';
+    return `
+      <div class="missed-word">
+        <div>
+          <div class="missed-en">${word}</div>
+          <div class="missed-ko">${ko}</div>
+        </div>
+        <div class="missed-bar"><div class="missed-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        <div class="missed-pct" style="color:${color}">${pct}%</div>
+      </div>`;
+  }).join('');
+}
+
+// ===== CALENDAR / SCHEDULE =====
+function renderCalendar() {
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0,10);
+
+  const label = `${calYear}년 ${calMonth + 1}월`;
+  document.getElementById('cal-month-label').textContent = label;
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=sun
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+  const heads = ['일','월','화','수','목','금','토'];
+  let html = heads.map(h => `<div class="cal-head">${h}</div>`).join('');
+
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-day empty"></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = dateStr === todayStr;
+    const isSelected = dateStr === selectedDate;
+    const sched = scheduleData[dateStr];
+    const progress = progressData.find(p => p.date === dateStr);
+
+    let tag = '';
+    if (progress && progress.completed) {
+      tag = '<div class="day-tag done">완료</div>';
+    } else if (sched) {
+      if (sched.type === 'learn') tag = `<div class="day-tag learn">D${sched.day||''}</div>`;
+      else if (sched.type === 'review') tag = '<div class="day-tag review">복습</div>';
+      else if (sched.type === 'rest') tag = '<div class="day-tag rest">쉼</div>';
+    }
+
+    html += `<div class="cal-day${isToday?' today':''}${isSelected?' selected':''}" onclick="selectDate('${dateStr}')">
+      <div class="day-num">${d}</div>${tag}</div>`;
+  }
+
+  document.getElementById('cal-grid').innerHTML = html;
+}
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+
+function selectDate(dateStr) {
+  selectedDate = dateStr;
+  renderCalendar();
+
+  const editor = document.getElementById('sched-editor');
+  editor.style.display = 'block';
+  document.getElementById('sel-date-label').textContent = formatDate(dateStr);
+
+  const sched = scheduleData[dateStr];
+  document.querySelectorAll('.sched-type-btn').forEach(b => b.classList.remove('active'));
+
+  if (sched) {
+    document.querySelector(`.sched-type-btn[data-type="${sched.type}"]`)?.classList.add('active');
+    renderSchedDetail(sched.type, sched);
+  } else {
+    document.getElementById('sched-detail').innerHTML = '';
+  }
+}
+
+function setSchedType(type) {
+  document.querySelectorAll('.sched-type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  renderSchedDetail(type, scheduleData[selectedDate] || {});
+}
+
+function renderSchedDetail(type, sched) {
+  const el = document.getElementById('sched-detail');
+  if (type === 'learn') {
+    el.innerHTML = `
+      <div class="sched-day-input">
+        <label>Day 번호:</label>
+        <input type="number" id="sched-day-num" min="1" max="40" value="${sched.day || suggestNextDay()}">
+      </div>`;
+  } else if (type === 'review') {
+    const completedDays = appState.completedDays || [];
+    const totalDays = Math.max(40, Object.keys(wordsData).length);
+    const selected = sched.reviewDays || [];
+    let chips = '';
+    for (let i = 1; i <= totalDays; i++) {
+      chips += `<button class="sched-review-chip${selected.includes(i)?' selected':''}" onclick="this.classList.toggle('selected')" data-day="${i}">Day ${i}</button>`;
+    }
+    el.innerHTML = `
+      <div style="font-size:13px;color:var(--sub);margin-bottom:6px">복습할 Day를 선택하세요:</div>
+      <div class="sched-review-days" id="review-day-chips">${chips}</div>`;
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+function suggestNextDay() {
+  const completed = appState.completedDays || [];
+  return completed.length > 0 ? Math.max(...completed) + 1 : 1;
+}
+
+async function saveScheduleDay() {
+  if (!selectedDate) return;
+  const activeType = document.querySelector('.sched-type-btn.active');
+  if (!activeType) { toast('유형을 선택해주세요'); return; }
+  const type = activeType.dataset.type;
+
+  const data = { type };
+  if (type === 'learn') {
+    data.day = parseInt(document.getElementById('sched-day-num').value) || 1;
+  } else if (type === 'review') {
+    const chips = document.querySelectorAll('#review-day-chips .sched-review-chip.selected');
+    data.reviewDays = [...chips].map(c => parseInt(c.dataset.day));
+    if (data.reviewDays.length === 0) { toast('복습할 Day를 선택해주세요'); return; }
+  }
+
+  try {
+    await db.collection('schedule').doc(selectedDate).set(data);
+    scheduleData[selectedDate] = data;
+    renderCalendar();
+    toast('저장 완료!');
+  } catch(e) { toast('저장 실패: ' + e.message); }
+}
+
+async function deleteScheduleDay() {
+  if (!selectedDate) return;
+  try {
+    await db.collection('schedule').doc(selectedDate).delete();
+    delete scheduleData[selectedDate];
+    renderCalendar();
+    document.getElementById('sched-editor').style.display = 'none';
+    toast('일정 삭제됨');
+  } catch(e) { toast('삭제 실패: ' + e.message); }
+}
+
+async function generateBulkSchedule() {
+  const startDate = document.getElementById('bulk-start').value;
+  if (!startDate) { toast('시작일을 선택해주세요'); return; }
+  const startDay = parseInt(document.getElementById('bulk-day').value) || 1;
+  const weeks = parseInt(document.getElementById('bulk-weeks').value) || 2;
+  const totalCalDays = weeks * 7;
+
+  let currentDay = startDay;
+  const batch = db.batch();
+  let count = 0;
+  const learnDaysThisWeek = [];
+
+  for (let i = 0; i < totalCalDays; i++) {
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + i);
+    const dateStr = d.toISOString().slice(0,10);
+    const dow = d.getDay();
+    const ref = db.collection('schedule').doc(dateStr);
+
+    if (dow >= 1 && dow <= 4) { // Mon-Thu: learn
+      if (currentDay <= 40) {
+        const data = { type: 'learn', day: currentDay };
+        batch.set(ref, data);
+        scheduleData[dateStr] = data;
+        learnDaysThisWeek.push(currentDay);
+        currentDay++;
+        count++;
+      }
+    } else if (dow === 5 || dow === 6 || dow === 0) { // Fri-Sun: review
+      if (learnDaysThisWeek.length > 0) {
+        const data = { type: 'review', reviewDays: [...learnDaysThisWeek] };
+        batch.set(ref, data);
+        scheduleData[dateStr] = data;
+        count++;
+      }
+      if (dow === 0) learnDaysThisWeek.length = 0; // Reset on Sunday
+    }
+  }
+
+  try {
+    await batch.commit();
+    renderCalendar();
+    toast(`${count}일 스케줄 생성 완료!`);
+  } catch(e) { toast('생성 실패: ' + e.message); }
+}
+
+// ===== WORD MANAGEMENT =====
+function populateDaySelector() {
+  const sel = document.getElementById('word-day-select');
+  const days = Object.keys(wordsData).map(Number).sort((a,b) => a - b);
+  sel.innerHTML = '<option value="">Day 선택</option>' +
+    days.map(d => `<option value="${d}">Day ${d} – ${wordsData[d]?.title || ''}</option>`).join('');
+
+  // Also add option to create new day
+  const maxDay = days.length > 0 ? Math.max(...days) : 0;
+  sel.innerHTML += `<option value="new">+ 새 Day 추가 (Day ${maxDay + 1})</option>`;
+}
+
+function loadWordDay(val) {
+  if (val === '') {
+    document.getElementById('word-table-container').innerHTML = '';
+    document.getElementById('day-title-editor').style.display = 'none';
+    return;
+  }
+
+  if (val === 'new') {
+    const days = Object.keys(wordsData).map(Number);
+    const newDay = (days.length > 0 ? Math.max(...days) : 0) + 1;
+    wordsData[newDay] = { title: '', words: [] };
+    currentWordDay = newDay;
+    populateDaySelector();
+    document.getElementById('word-day-select').value = newDay;
+    document.getElementById('day-title-editor').style.display = 'block';
+    document.getElementById('day-title-input').value = '';
+    document.getElementById('day-title-input').focus();
+    renderWordTable();
+    return;
+  }
+
+  currentWordDay = parseInt(val);
+  document.getElementById('day-title-editor').style.display = 'block';
+  document.getElementById('day-title-input').value = wordsData[currentWordDay]?.title || '';
+  renderWordTable();
+}
+
+function renderWordTable() {
+  const container = document.getElementById('word-table-container');
+  const data = wordsData[currentWordDay];
+  if (!data || !data.words || data.words.length === 0) {
+    container.innerHTML = '<div class="card" style="text-align:center;color:var(--sub);padding:30px">단어가 없습니다. 위에서 추가해주세요.</div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="word-table-wrap">
+      <table class="word-table">
+        <thead><tr><th>#</th><th>영어</th><th>뜻</th><th>예문</th><th></th></tr></thead>
+        <tbody>
+          ${data.words.map((w, i) => `
+            <tr>
+              <td style="color:var(--sub)">${i+1}</td>
+              <td style="font-weight:600">${w.en}</td>
+              <td>${w.ko}</td>
+              <td style="font-size:12px;color:var(--sub);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${w.ex || ''}</td>
+              <td>
+                <div class="word-actions">
+                  <button class="edit-btn" onclick="editWord(${i})">✏️</button>
+                  <button class="del-btn" onclick="deleteWord(${i})">✕</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:8px;font-size:12px;color:var(--sub);text-align:right">${data.words.length}개 단어</div>`;
+}
+
+async function saveDayTitle() {
+  if (currentWordDay === null) return;
+  const title = document.getElementById('day-title-input').value.trim();
+  if (!wordsData[currentWordDay]) wordsData[currentWordDay] = { title: '', words: [] };
+  wordsData[currentWordDay].title = title;
+  await saveWordDay(currentWordDay);
+  populateDaySelector();
+  document.getElementById('word-day-select').value = currentWordDay;
+  toast('제목 저장됨');
+}
+
+function showAddWord() {
+  document.getElementById('add-word-form').style.display = 'block';
+  document.getElementById('new-en').value = '';
+  document.getElementById('new-ko').value = '';
+  document.getElementById('new-ex').value = '';
+  document.getElementById('new-en').focus();
+}
+
+function hideAddWord() {
+  document.getElementById('add-word-form').style.display = 'none';
+}
+
+async function addWord() {
+  if (currentWordDay === null) { toast('Day를 먼저 선택해주세요'); return; }
+  const en = document.getElementById('new-en').value.trim();
+  const ko = document.getElementById('new-ko').value.trim();
+  const ex = document.getElementById('new-ex').value.trim();
+  if (!en || !ko) { toast('영어와 뜻을 입력해주세요'); return; }
+
+  if (!wordsData[currentWordDay]) wordsData[currentWordDay] = { title: '', words: [] };
+  wordsData[currentWordDay].words.push({ en, ko, ex });
+  await saveWordDay(currentWordDay);
+  renderWordTable();
+  hideAddWord();
+  toast('단어 추가됨');
+}
+
+function editWord(index) {
+  editingWordIndex = index;
+  const w = wordsData[currentWordDay].words[index];
+  document.getElementById('edit-en').value = w.en;
+  document.getElementById('edit-ko').value = w.ko;
+  document.getElementById('edit-ex').value = w.ex || '';
+  document.getElementById('edit-modal').classList.add('active');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('active');
+}
+
+async function saveEditWord() {
+  const en = document.getElementById('edit-en').value.trim();
+  const ko = document.getElementById('edit-ko').value.trim();
+  const ex = document.getElementById('edit-ex').value.trim();
+  if (!en || !ko) { toast('영어와 뜻을 입력해주세요'); return; }
+
+  wordsData[currentWordDay].words[editingWordIndex] = { en, ko, ex };
+  await saveWordDay(currentWordDay);
+  renderWordTable();
+  closeEditModal();
+  toast('수정 완료');
+}
+
+async function deleteWord(index) {
+  if (!confirm('이 단어를 삭제할까요?')) return;
+  wordsData[currentWordDay].words.splice(index, 1);
+  await saveWordDay(currentWordDay);
+  renderWordTable();
+  toast('단어 삭제됨');
+}
+
+async function saveWordDay(day) {
+  try {
+    await db.collection('words').doc(String(day)).set(wordsData[day]);
+  } catch(e) { toast('저장 실패: ' + e.message); }
+}
+
+// ===== CSV UPLOAD =====
+function handleCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const text = e.target.result;
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+    // Detect header
+    const firstLine = lines[0].toLowerCase();
+    const hasHeader = firstLine.includes('day') || firstLine.includes('영어') || firstLine.includes('english');
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+
+    // Parse: day, title, english, korean, example
+    const dayMap = {};
+    let parsed = 0;
+    dataLines.forEach(line => {
+      const cols = parseCSVLine(line);
+      if (cols.length < 4) return;
+      const dayNum = parseInt(cols[0]);
+      if (isNaN(dayNum)) return;
+      const title = cols[1].trim();
+      const en = cols[2].trim();
+      const ko = cols[3].trim();
+      const ex = (cols[4] || '').trim();
+      if (!en || !ko) return;
+
+      if (!dayMap[dayNum]) dayMap[dayNum] = { title: title, words: [] };
+      if (title && !dayMap[dayNum].title) dayMap[dayNum].title = title;
+      dayMap[dayNum].words.push({ en, ko, ex });
+      parsed++;
+    });
+
+    if (parsed === 0) { toast('CSV 파싱 실패 — 형식을 확인해주세요'); return; }
+
+    // Save to Firestore
+    const batch = db.batch();
+    Object.entries(dayMap).forEach(([day, data]) => {
+      // Merge with existing
+      if (wordsData[day]) {
+        data.title = data.title || wordsData[day].title;
+        data.words = [...(wordsData[day].words || []), ...data.words];
+      }
+      wordsData[day] = data;
+      batch.set(db.collection('words').doc(String(day)), data);
+    });
+
+    try {
+      await batch.commit();
+      populateDaySelector();
+      toast(`${parsed}개 단어 업로드 완료! (${Object.keys(dayMap).length}개 Day)`);
+    } catch(e) { toast('업로드 실패: ' + e.message); }
+
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === ',' && !inQuotes) { result.push(current); current = ''; }
+    else { current += ch; }
+  }
+  result.push(current);
+  return result;
+}
+
+// ===== REWARDS =====
+function renderRewards() {
+  const el = document.getElementById('reward-list');
+  if (rewardsData.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--sub);font-size:14px">등록된 보상이 없어요</div>';
+    return;
+  }
+  el.innerHTML = rewardsData.map(r => `
+    <div class="reward-item">
+      <div class="r-icon">🎁</div>
+      <div class="r-text">${r.content}</div>
+      <div class="r-actions">
+        <button class="btn btn-danger btn-sm" onclick="deleteReward('${r.id}')" style="padding:6px 10px">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+async function addReward() {
+  const input = document.getElementById('new-reward');
+  const content = input.value.trim();
+  if (!content) { toast('보상 내용을 입력해주세요'); return; }
+
+  try {
+    const ref = await db.collection('rewards').add({ content });
+    rewardsData.push({ id: ref.id, content });
+    renderRewards();
+    input.value = '';
+    toast('보상 추가됨!');
+  } catch(e) { toast('추가 실패: ' + e.message); }
+}
+
+async function deleteReward(id) {
+  if (!confirm('이 보상을 삭제할까요?')) return;
+  try {
+    await db.collection('rewards').doc(id).delete();
+    rewardsData = rewardsData.filter(r => r.id !== id);
+    renderRewards();
+    toast('보상 삭제됨');
+  } catch(e) { toast('삭제 실패: ' + e.message); }
+}
+
+// ===== SETTINGS =====
+function renderPause() {
+  const paused = settingsData.paused || false;
+  const statusEl = document.getElementById('pause-status');
+  const dotEl = document.getElementById('pause-dot');
+  const titleEl = document.getElementById('pause-title');
+  const detailEl = document.getElementById('pause-detail');
+  const btnEl = document.getElementById('pause-toggle-btn');
+  const rangeEl = document.getElementById('pause-date-range');
+
+  if (paused) {
+    statusEl.className = 'pause-status pause-active';
+    dotEl.className = 'pause-dot on';
+    titleEl.textContent = '일시정지 중';
+    const until = settingsData.pauseUntil;
+    detailEl.textContent = until ? `${formatDate(until)}까지 일시정지` : '수동으로 해제할 때까지';
+    btnEl.textContent = '학습 재개';
+    btnEl.className = 'btn btn-primary btn-block';
+    rangeEl.style.display = 'flex';
+    if (until) document.getElementById('pause-until').value = until;
+  } else {
+    statusEl.className = 'pause-status pause-inactive';
+    dotEl.className = 'pause-dot off';
+    titleEl.textContent = '학습 진행 중';
+    detailEl.textContent = '정상적으로 학습이 진행되고 있어요';
+    btnEl.textContent = '일시정지';
+    btnEl.className = 'btn btn-danger btn-block';
+    rangeEl.style.display = 'none';
+  }
+
+  document.getElementById('streak-edit').value = appState.streak || 0;
+}
+
+async function togglePause() {
+  const paused = !(settingsData.paused || false);
+  settingsData.paused = paused;
+  if (!paused) settingsData.pauseUntil = null;
+
+  try {
+    await db.collection('settings').doc('main').set(settingsData, { merge: true });
+    renderPause();
+    toast(paused ? '일시정지됨' : '학습 재개!');
+  } catch(e) { toast('설정 실패: ' + e.message); }
+}
+
+async function setPauseUntil() {
+  const until = document.getElementById('pause-until').value;
+  if (!until) { toast('날짜를 선택해주세요'); return; }
+  settingsData.pauseUntil = until;
+
+  try {
+    await db.collection('settings').doc('main').set(settingsData, { merge: true });
+    renderPause();
+    toast(`${formatDate(until)}까지 일시정지 설정됨`);
+  } catch(e) { toast('설정 실패: ' + e.message); }
+}
+
+async function saveStreak() {
+  const streak = parseInt(document.getElementById('streak-edit').value) || 0;
+  appState.streak = streak;
+  try {
+    await db.collection('appState').doc('main').set(appState, { merge: true });
+    toast('연속 기록 수정됨');
+    renderDashboard();
+  } catch(e) { toast('저장 실패: ' + e.message); }
+}
+
+async function confirmReset() {
+  if (!confirm('정말 학습 진도를 초기화할까요?\n모든 학습 기록과 진행 상황이 삭제됩니다.')) return;
+  if (!confirm('한 번 더 확인합니다. 정말 초기화할까요?')) return;
+
+  try {
+    await db.collection('appState').doc('main').set({
+      streak: 0, completedDays: [], weekCats: [], catStage: 0, lastStudy: null
+    });
+    // Delete progress docs
+    const snap = await db.collection('progress').get();
+    const batch = db.batch();
+    snap.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+
+    // Delete session
+    try { await db.collection('sessions').doc('current').delete(); } catch(e) {}
+
+    appState = { streak: 0, completedDays: [], weekCats: [], catStage: 0 };
+    progressData = [];
+    renderDashboard();
+    renderPause();
+    toast('초기화 완료');
+  } catch(e) { toast('초기화 실패: ' + e.message); }
+}
+
+// ===== HELPERS =====
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const [y,m,d] = dateStr.split('-');
+  const dow = ['일','월','화','수','목','금','토'];
+  const date = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+  return `${parseInt(m)}/${parseInt(d)}(${dow[date.getDay()]})`;
+}
+
+// ===== INIT =====
+async function init() {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  document.getElementById('bulk-start').value = now.toISOString().slice(0,10);
+
+  await Promise.all([
+    loadAppState(),
+    loadProgress(),
+    loadSchedule(),
+    loadWords(),
+    loadRewards(),
+    loadSettings()
+  ]);
+
+  renderDashboard();
+  renderCalendar();
+  renderRewards();
+  renderPause();
+}
+
+init();
+</script>
+</body>
+</html>
