@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<title>본's 영어단어</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#faf8f5;--card:#fff;--text:#3a3230;--sub:#8a7e76;
+  --accent:#8b7355;--accent2:#c4a67a;--correct:#5a9e6f;--wrong:#c75c5c;
+  --point-color:#6b5344;--cat-body:#f5f0e8;
+  --shadow:0 2px 16px rgba(80,60,40,.08);
+  --radius:16px;
+}
+html,body{height:100%;font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+body{display:flex;flex-direction:column;max-width:520px;margin:0 auto;position:relative}
+
+/* Screens */
+.screen{display:none;flex-direction:column;height:100dvh;padding:20px;padding-top:env(safe-area-inset-top,20px);overflow-y:auto}
+.screen.active{display:flex}
+
+/* Home */
+.home-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.streak{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:var(--accent)}
+.streak .fire{font-size:22px}
+.gallery-btn{width:40px;height:40px;border-radius:12px;background:var(--card);border:none;font-size:20px;cursor:pointer;box-shadow:var(--shadow)}
+
+.cat-container{background:var(--card);border-radius:20px;padding:24px;margin-bottom:16px;box-shadow:var(--shadow);text-align:center}
+.cat-container svg{width:180px;height:180px;margin:0 auto}
+.cat-week-label{font-size:13px;color:var(--sub);margin-top:8px}
+.cat-progress-dots{display:flex;justify-content:center;gap:8px;margin-top:10px}
+.cat-dot{width:10px;height:10px;border-radius:50%;background:#e8e2da;transition:background .3s}
+.cat-dot.filled{background:var(--point-color)}
+
+.today-card{background:var(--card);border-radius:var(--radius);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.today-label{font-size:13px;color:var(--sub);margin-bottom:4px}
+.today-title{font-size:20px;font-weight:700;margin-bottom:12px}
+.progress-bar-wrap{background:#ede8e2;border-radius:8px;height:8px;overflow:hidden;margin-bottom:4px}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:8px;transition:width .4s}
+.progress-text{font-size:12px;color:var(--sub);text-align:right}
+
+.start-btn{width:100%;padding:18px;border:none;border-radius:var(--radius);background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(139,115,85,.3);transition:transform .15s;margin-top:auto;margin-bottom:20px}
+.start-btn:active{transform:scale(.97)}
+.resume-hint{text-align:center;font-size:13px;color:var(--sub);margin-bottom:8px}
+
+/* Study screens */
+.study-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-shrink:0}
+.back-btn{width:36px;height:36px;border-radius:10px;background:var(--card);border:none;font-size:18px;cursor:pointer;box-shadow:var(--shadow)}
+.step-indicator{font-size:13px;color:var(--sub)}
+.step-progress{margin-left:auto;font-size:13px;color:var(--sub)}
+.save-exit-btn{padding:8px 14px;border-radius:10px;background:var(--card);border:none;font-size:13px;color:var(--sub);cursor:pointer;box-shadow:var(--shadow)}
+
+/* Flashcard */
+.flashcard{background:var(--card);border-radius:20px;padding:32px 24px;box-shadow:var(--shadow);text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;margin-bottom:16px;min-height:300px}
+.flash-word{font-size:32px;font-weight:700;margin-bottom:8px}
+.flash-phonetic{font-size:14px;color:var(--sub);margin-bottom:16px}
+.sound-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;background:var(--bg);border:none;font-size:22px;cursor:pointer;margin-bottom:20px}
+.flash-meaning{font-size:22px;color:var(--accent);margin-bottom:16px;min-height:30px}
+.flash-example{font-size:15px;color:var(--sub);line-height:1.6;min-height:48px;font-style:italic}
+.flash-tap-hint{font-size:13px;color:#ccc;margin-top:12px}
+
+.flash-btns{display:flex;gap:12px}
+.flash-btns button{flex:1;padding:16px;border:none;border-radius:var(--radius);font-size:16px;font-weight:600;cursor:pointer;transition:transform .15s}
+.flash-btns button:active{transform:scale(.96)}
+.btn-dont-know{background:#f5e6e6;color:var(--wrong)}
+.btn-know{background:#e2f0e6;color:var(--correct)}
+
+/* Quiz */
+.quiz-card{background:var(--card);border-radius:20px;padding:28px 24px;box-shadow:var(--shadow);text-align:center;margin-bottom:16px}
+.quiz-question{font-size:26px;font-weight:700;margin-bottom:8px}
+.quiz-sub{font-size:14px;color:var(--sub);margin-bottom:4px}
+.quiz-options{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.quiz-option{padding:16px 20px;border:2px solid #ede8e2;border-radius:14px;background:var(--card);font-size:16px;text-align:left;cursor:pointer;transition:all .2s}
+.quiz-option:active{transform:scale(.98)}
+.quiz-option.selected{border-color:var(--accent);background:#f8f3ed}
+.quiz-option.correct{border-color:var(--correct);background:#e8f5ec}
+.quiz-option.wrong{border-color:var(--wrong);background:#fce8e8}
+.quiz-option.reveal-correct{border-color:var(--correct);background:#e8f5ec}
+
+/* Spelling */
+.spell-card{background:var(--card);border-radius:20px;padding:28px 24px;box-shadow:var(--shadow);text-align:center;margin-bottom:16px}
+.spell-meaning{font-size:22px;font-weight:600;color:var(--accent);margin-bottom:20px}
+.spell-blanks{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:24px;min-height:50px}
+.spell-letter{width:36px;height:44px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;border-bottom:3px solid #ddd;color:var(--text)}
+.spell-letter.blank{border-bottom-color:var(--accent)}
+.spell-letter.filled{color:var(--accent);border-bottom-color:var(--correct)}
+.spell-letter.wrong-letter{color:var(--wrong);border-bottom-color:var(--wrong)}
+.spell-input-row{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.spell-key{width:36px;height:44px;border-radius:8px;background:var(--bg);border:1.5px solid #ddd;font-size:18px;font-weight:600;cursor:pointer;transition:all .15s}
+.spell-key:active{transform:scale(.92);background:#e8e2da}
+.spell-key.used{opacity:.3;pointer-events:none}
+
+/* Sentence fill (review) */
+.sentence-card{background:var(--card);border-radius:20px;padding:28px 24px;box-shadow:var(--shadow);margin-bottom:16px}
+.sentence-text{font-size:18px;line-height:1.8;margin-bottom:8px;text-align:center}
+.sentence-blank{display:inline-block;min-width:80px;border-bottom:2px solid var(--accent);margin:0 4px}
+.sentence-meaning{font-size:14px;color:var(--sub);text-align:center;margin-bottom:16px}
+
+/* Result / feedback */
+.feedback-overlay{position:fixed;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;z-index:100;background:rgba(0,0,0,.2);backdrop-filter:blur(4px)}
+.feedback-overlay.active{display:flex}
+.feedback-box{background:var(--card);border-radius:24px;padding:32px;text-align:center;max-width:340px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.15);animation:popIn .3s ease}
+@keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+.feedback-emoji{font-size:48px;margin-bottom:12px}
+.feedback-title{font-size:22px;font-weight:700;margin-bottom:8px}
+.feedback-msg{font-size:15px;color:var(--sub);line-height:1.6;margin-bottom:20px}
+.feedback-btn{padding:14px 32px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-size:16px;font-weight:600;cursor:pointer}
+
+/* Bonus */
+.bonus-overlay{position:fixed;top:0;left:0;right:0;bottom:0;display:none;align-items:center;justify-content:center;z-index:110;background:rgba(0,0,0,.3);backdrop-filter:blur(6px)}
+.bonus-overlay.active{display:flex}
+.bonus-box{background:linear-gradient(135deg,#fff8e8,#fff);border-radius:24px;padding:36px;text-align:center;max-width:340px;width:90%;box-shadow:0 8px 40px rgba(200,160,60,.25);animation:bonusPop .5s ease}
+@keyframes bonusPop{from{transform:scale(.5) rotate(-5deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+.bonus-star{font-size:56px;margin-bottom:8px}
+.bonus-title{font-size:24px;font-weight:800;color:#c4942a;margin-bottom:12px}
+.bonus-content{font-size:18px;font-weight:600;color:var(--text);margin-bottom:20px;line-height:1.5}
+
+/* Gallery */
+.gallery-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding-bottom:40px}
+.gallery-item{background:var(--card);border-radius:var(--radius);padding:20px;text-align:center;box-shadow:var(--shadow)}
+.gallery-item svg{width:100px;height:100px}
+.gallery-item .week-label{font-size:13px;color:var(--sub);margin-top:6px}
+.gallery-empty{color:#ddd;font-size:14px;padding:40px 0;text-align:center;grid-column:1/-1}
+
+.screen-title{font-size:22px;font-weight:700;margin-bottom:20px}
+
+/* Next step button */
+.next-btn{width:100%;padding:16px;border:none;border-radius:var(--radius);background:var(--accent);color:#fff;font-size:16px;font-weight:600;cursor:pointer;margin-top:auto;margin-bottom:20px;transition:transform .15s}
+.next-btn:active{transform:scale(.97)}
+.next-btn:disabled{opacity:.4;pointer-events:none}
+
+/* Rest day */
+.rest-message{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.rest-emoji{font-size:64px;margin-bottom:16px}
+.rest-title{font-size:22px;font-weight:700;margin-bottom:8px}
+.rest-sub{font-size:15px;color:var(--sub)}
+
+/* Animations */
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.animate-in{animation:slideUp .3s ease}
+
+/* Quiz result highlight delay */
+.quiz-option{transition:all .25s}
+</style>
+</head>
+<body>
+
+<!-- ========== HOME SCREEN ========== -->
+<div id="screen-home" class="screen active">
+  <div class="home-top">
+    <div class="streak"><span class="fire">🔥</span><span id="streak-count">0</span>일 연속</div>
+    <button class="gallery-btn" onclick="showGallery()">📚</button>
+  </div>
+
+  <div class="cat-container">
+    <div id="cat-display"></div>
+    <div class="cat-week-label" id="cat-week-label">이번 주 고양이</div>
+    <div class="cat-progress-dots" id="cat-dots"></div>
+  </div>
+
+  <div class="today-card">
+    <div class="today-label" id="today-label">오늘의 학습</div>
+    <div class="today-title" id="today-title">Day 1 – People</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="total-progress" style="width:0%"></div></div>
+    <div class="progress-text" id="total-progress-text">0 / 40 Days</div>
+  </div>
+
+  <div id="resume-hint" class="resume-hint" style="display:none">이어서 하기 — 저장된 진행이 있어요</div>
+  <button class="start-btn" id="start-btn" onclick="startToday()">시작하기</button>
+</div>
+
+<!-- ========== STUDY SCREEN ========== -->
+<div id="screen-study" class="screen">
+  <div class="study-header">
+    <button class="back-btn" onclick="saveAndExit()">←</button>
+    <span class="step-indicator" id="step-indicator">1단계: 플래시카드</span>
+    <span class="step-progress" id="step-progress">1 / 20</span>
+    <button class="save-exit-btn" onclick="saveAndExit()">저장하고 나가기</button>
+  </div>
+  <div id="study-content"></div>
+</div>
+
+<!-- ========== REVIEW SCREEN ========== -->
+<div id="screen-review" class="screen">
+  <div class="study-header">
+    <button class="back-btn" onclick="saveAndExit()">←</button>
+    <span class="step-indicator">복습</span>
+    <span class="step-progress" id="review-progress">1 / 20</span>
+    <button class="save-exit-btn" onclick="saveAndExit()">저장하고 나가기</button>
+  </div>
+  <div id="review-content"></div>
+</div>
+
+<!-- ========== GALLERY SCREEN ========== -->
+<div id="screen-gallery" class="screen">
+  <div class="study-header">
+    <button class="back-btn" onclick="showScreen('screen-home')">←</button>
+    <span class="screen-title" style="margin:0">고양이 도감</span>
+  </div>
+  <div class="gallery-grid" id="gallery-grid"></div>
+</div>
+
+<!-- ========== REST SCREEN ========== -->
+<div id="screen-rest" class="screen">
+  <div class="rest-message">
+    <div class="rest-emoji">😊</div>
+    <div class="rest-title" id="rest-title">오늘은 쉬는 날이에요</div>
+    <div class="rest-sub" id="rest-sub">푹 쉬고 내일 다시 만나요!</div>
+  </div>
+</div>
+
+<!-- ========== COMPLETION OVERLAY ========== -->
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-box">
+    <div class="feedback-emoji" id="fb-emoji">🎉</div>
+    <div class="feedback-title" id="fb-title">대단해, 본!</div>
+    <div class="feedback-msg" id="fb-msg"></div>
+    <button class="feedback-btn" onclick="closeFeedback()">확인</button>
+  </div>
+</div>
+
+<!-- ========== BONUS OVERLAY ========== -->
+<div class="bonus-overlay" id="bonus-overlay">
+  <div class="bonus-box">
+    <div class="bonus-star">🎁</div>
+    <div class="bonus-title">✨ 특별보너스 ✨</div>
+    <div class="bonus-content" id="bonus-content"></div>
+    <button class="feedback-btn" onclick="closeBonus()">와! 고마워요!</button>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+// ===== FIREBASE CONFIG — 보라님의 Firebase 프로젝트 설정으로 교체하세요 =====
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+// ===================================================================
+
+// ===== SAMPLE DATA (테스트용 — 실제 단어는 Firebase에서 로드) =====
+const SAMPLE_WORDS = {
+  1: {title:'People',words:[
+    {en:'person',ko:'사람',ex:'She is a kind person.'},
+    {en:'people',ko:'사람들',ex:'Many people live in this city.'},
+    {en:'child',ko:'아이',ex:'The child is playing in the park.'},
+    {en:'adult',ko:'어른',ex:'An adult should be responsible.'},
+    {en:'baby',ko:'아기',ex:'The baby is sleeping now.'},
+    {en:'teenager',ko:'십대',ex:'He is a teenager in middle school.'},
+    {en:'male',ko:'남성의',ex:'The male cat is bigger.'},
+    {en:'female',ko:'여성의',ex:'She is a female doctor.'},
+    {en:'human',ko:'인간',ex:'Humans need water to live.'},
+    {en:'stranger',ko:'낯선 사람',ex:'Do not talk to strangers.'},
+    {en:'neighbor',ko:'이웃',ex:'Our neighbor is very friendly.'},
+    {en:'guest',ko:'손님',ex:'We have a special guest today.'},
+    {en:'citizen',ko:'시민',ex:'Every citizen has rights.'},
+    {en:'individual',ko:'개인',ex:'Each individual is unique.'},
+    {en:'crowd',ko:'군중',ex:'A large crowd gathered in the square.'},
+    {en:'generation',ko:'세대',ex:'The younger generation loves technology.'},
+    {en:'member',ko:'구성원',ex:'She is a member of the team.'},
+    {en:'population',ko:'인구',ex:'The population is growing fast.'},
+    {en:'youth',ko:'청소년',ex:'The youth of today are very creative.'},
+    {en:'elderly',ko:'노인',ex:'We should respect the elderly.'}
+  ]},
+  2: {title:'Family',words:[
+    {en:'family',ko:'가족',ex:'My family has five members.'},
+    {en:'parent',ko:'부모',ex:'Her parents are teachers.'},
+    {en:'mother',ko:'어머니',ex:'My mother cooks well.'},
+    {en:'father',ko:'아버지',ex:'His father works at a hospital.'},
+    {en:'daughter',ko:'딸',ex:'She is the youngest daughter.'},
+    {en:'son',ko:'아들',ex:'Their son is in college.'},
+    {en:'sister',ko:'자매',ex:'I have two sisters.'},
+    {en:'brother',ko:'형제',ex:'My brother is older than me.'},
+    {en:'husband',ko:'남편',ex:'Her husband is a pilot.'},
+    {en:'wife',ko:'아내',ex:'His wife is a nurse.'},
+    {en:'cousin',ko:'사촌',ex:'My cousin lives in Busan.'},
+    {en:'uncle',ko:'삼촌',ex:'Uncle visited us last weekend.'},
+    {en:'aunt',ko:'이모, 고모',ex:'My aunt gave me a gift.'},
+    {en:'grandparent',ko:'조부모',ex:'I visit my grandparents every holiday.'},
+    {en:'grandson',ko:'손자',ex:'The grandson looks like his grandfather.'},
+    {en:'relative',ko:'친척',ex:'We met many relatives at the wedding.'},
+    {en:'ancestor',ko:'조상',ex:'Our ancestors lived in this village.'},
+    {en:'couple',ko:'부부, 커플',ex:'The couple walked along the beach.'},
+    {en:'twin',ko:'쌍둥이',ex:'The twins look exactly alike.'},
+    {en:'orphan',ko:'고아',ex:'The orphan found a new family.'}
+  ]}
+};
+
+// ===== APP STATE =====
+let state = {
+  currentDay: null,
+  todayType: null, // 'learn' | 'review'
+  reviewDays: [],
+  step: 1,         // 1-4 for learn, special for review
+  wordIndex: 0,
+  words: [],
+  results: {},     // {word: {step1:bool, step2:bool, step3:bool, step4:bool}}
+  streak: 0,
+  completedDays: [],
+  catStage: 0,     // 0-4 for this week
+  weekCats: [],    // collected cats
+  savedSession: null,
+  paused: false
+};
+
+// ===== ENCOURAGEMENT MESSAGES =====
+const ENCOURAGEMENTS = [
+  "본, 오늘도 해냈어! 🎉",
+  "꾸준함이 최고의 실력이야, 본! 💪",
+  "본, 매일 성장하고 있어! 🌱",
+  "오늘의 본은 어제보다 더 강해! ⭐",
+  "본, 너의 노력이 빛나고 있어! ✨",
+  "작은 걸음이 큰 변화를 만들어, 본! 🚀",
+  "포기하지 않는 본이 멋져! 🏆",
+  "본, 영어 실력이 쑥쑥 자라고 있어! 📈",
+  "오늘 하루도 잘 마무리! 본 최고! 👏",
+  "어려운 단어도 이겨냈어, 본! 💎",
+  "\"천 리 길도 한 걸음부터\" — 본, 오늘도 한 걸음! 👣",
+  "\"The secret of getting ahead is getting started.\" 🌟",
+  "\"Every expert was once a beginner.\" — 본, 계속 가자! 🎯",
+  "오늘도 20개 단어를 정복했어! 🗡️",
+  "본, 내일도 기다리고 있을게! 🐱"
+];
+
+// ===== CAT SVG GENERATOR =====
+function generateCatSVG(stage, pose = 0) {
+  // stage: 0=white, 1=ears, 2=ears+nose, 3=ears+nose+tail, 4=full siamese
+  const earColor = stage >= 1 ? 'var(--point-color)' : 'var(--cat-body)';
+  const noseColor = stage >= 2 ? 'var(--point-color)' : 'var(--cat-body)';
+  const tailColor = stage >= 3 ? 'var(--point-color)' : 'var(--cat-body)';
+  const pawColor = stage >= 4 ? 'var(--point-color)' : 'var(--cat-body)';
+
+  const poses = [
+    // Pose 0: sitting
+    `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- tail -->
+      <path d="M145 155 Q175 140 170 110 Q168 95 158 90" fill="none" stroke="${tailColor}" stroke-width="8" stroke-linecap="round"/>
+      <!-- body -->
+      <ellipse cx="100" cy="148" rx="42" ry="38" fill="var(--cat-body)"/>
+      <!-- paws -->
+      <ellipse cx="78" cy="175" rx="14" ry="8" fill="${pawColor}"/>
+      <ellipse cx="118" cy="175" rx="14" ry="8" fill="${pawColor}"/>
+      <!-- head -->
+      <circle cx="100" cy="95" r="35" fill="var(--cat-body)"/>
+      <!-- ears -->
+      <path d="M72 72 L65 40 L88 62 Z" fill="${earColor}"/>
+      <path d="M128 72 L135 40 L112 62 Z" fill="${earColor}"/>
+      <path d="M74 68 L69 46 L86 63 Z" fill="${stage>=1?'#f0ddd0':'#fff8f4'}"/>
+      <path d="M126 68 L131 46 L114 63 Z" fill="${stage>=1?'#f0ddd0':'#fff8f4'}"/>
+      <!-- face mask -->
+      <ellipse cx="100" cy="102" rx="16" ry="12" fill="${noseColor}" opacity="0.6"/>
+      <!-- eyes -->
+      <ellipse cx="87" cy="92" rx="5" ry="5.5" fill="#5ba0d0"/>
+      <circle cx="86" cy="91" r="1.5" fill="#fff"/>
+      <ellipse cx="113" cy="92" rx="5" ry="5.5" fill="#5ba0d0"/>
+      <circle cx="112" cy="91" r="1.5" fill="#fff"/>
+      <!-- nose -->
+      <path d="M97 100 L100 103 L103 100" fill="#e8a0a0" stroke="#e8a0a0" stroke-width="1"/>
+      <!-- mouth -->
+      <path d="M100 103 Q96 108 92 106" fill="none" stroke="#d4a0a0" stroke-width="1"/>
+      <path d="M100 103 Q104 108 108 106" fill="none" stroke="#d4a0a0" stroke-width="1"/>
+      <!-- whiskers -->
+      <line x1="60" y1="96" x2="82" y2="100" stroke="#d0c8c0" stroke-width="1"/>
+      <line x1="58" y1="103" x2="82" y2="103" stroke="#d0c8c0" stroke-width="1"/>
+      <line x1="118" y1="100" x2="140" y2="96" stroke="#d0c8c0" stroke-width="1"/>
+      <line x1="118" y1="103" x2="142" y2="103" stroke="#d0c8c0" stroke-width="1"/>
+    </svg>`,
+    // Pose 1: lying down
+    `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <path d="M150 140 Q180 130 178 110 Q177 100 168 95" fill="none" stroke="${tailColor}" stroke-width="8" stroke-linecap="round"/>
+      <ellipse cx="105" cy="142" rx="55" ry="28" fill="var(--cat-body)"/>
+      <ellipse cx="60" cy="158" rx="12" ry="6" fill="${pawColor}"/>
+      <ellipse cx="85" cy="160" rx="12" ry="6" fill="${pawColor}"/>
+      <ellipse cx="140" cy="158" rx="12" ry="6" fill="${pawColor}"/>
+      <circle cx="68" cy="112" r="30" fill="var(--cat-body)"/>
+      <path d="M45 92 L38 62 L58 82 Z" fill="${earColor}"/>
+      <path d="M91 92 L98 62 L78 82 Z" fill="${earColor}"/>
+      <path d="M47 88 L42 68 L56 83 Z" fill="${stage>=1?'#f0ddd0':'#fff8f4'}"/>
+      <path d="M89 88 L94 68 L80 83 Z" fill="${stage>=1?'#f0ddd0':'#fff8f4'}"/>
+      <ellipse cx="68" cy="118" rx="14" ry="10" fill="${noseColor}" opacity="0.6"/>
+      <ellipse cx="57" cy="108" rx="4.5" ry="5" fill="#5ba0d0"/>
+      <circle cx="56" cy="107" r="1.5" fill="#fff"/>
+      <ellipse cx="79" cy="108" rx="4.5" ry="5" fill="#5ba0d0"/>
+      <circle cx="78" cy="107" r="1.5" fill="#fff"/>
+      <path d="M65 116 L68 119 L71 116" fill="#e8a0a0" stroke="#e8a0a0" stroke-width="1"/>
+      <path d="M68 119 Q64 123 61 121" fill="none" stroke="#d4a0a0" stroke-width="1"/>
+      <path d="M68 119 Q72 123 75 121" fill="none" stroke="#d4a0a0" stroke-width="1"/>
+      <line x1="32" y1="112" x2="52" y2="115" stroke="#d0c8c0" stroke-width="1"/>
+      <line x1="30" y1="118" x2="52" y2="118" stroke="#d0c8c0" stroke-width="1"/>
+      <line x1="84" y1="115" x2="104" y2="112" stroke="#d0c8c0" stroke-width="1"/>
+      <line x1="84" y1="118" x2="106" y2="118" stroke="#d0c8c0" stroke-width="1"/>
+    </svg>`,
+    // Pose 2: playing with yarn
+    `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="150" cy="160" r="18" fill="#e8a0a0" opacity="0.5"/>
+      <path d="M140 150 Q155 145 160 155 Q165 165 155 168" fill="none" stroke="#d08080" stroke-width="1.5"/>
+      <path d="M145 155 Q150 150 158 153" fill="none" stroke="#d08080" stroke-width="1.5"/>
+      <path d="M130 150 Q165 130 170 105 Q172 90 162 88" fill="none" stroke="${tailColor}" stroke-width="8" stroke-linecap="round"/>
+      <ellipse cx="95" cy="148" rx="40" ry="36" fill="var(--cat-body)" transform="rotate(-5,95,148)"/>
+      <ellipse cx="120" cy="170" rx="12" ry="7" fill="${pawColor}" transform="rotate(20,120,170)"/>
+      <ellipse cx="75" cy="175" rx="14" ry="8" fill="${pawColor}"/>
+      <circle cx="90" cy="95" r="33" fill="var(--cat-body)"/>
+      <path d="M62 75 L54 42 L80 64 Z" fill="${earColor}"/>
+      <path d="M118 72 L128 40 L105 62 Z" fill="${earColor}"/>
+      <path d="M64 71 L58 48 L78 65 Z" fill="${stage>=1?'#f0ddd0':'#fff8f4'}"/>
+      <path d="M116 68 L124 46 L107 63 Z" fill="${stage>=1?'#f0ddd0':'#fff8f4'}"/>
+      <ellipse cx="90" cy="102" rx="15" ry="11" fill="${noseColor}" opacity="0.6"/>
+      <ellipse cx="78" cy="92" rx="5" ry="5.5" fill="#5ba0d0"/>
+      <circle cx="77" cy="91" r="1.5" fill="#fff"/>
+      <ellipse cx="102" cy="92" rx="5" ry="5.5" fill="#5ba0d0"/>
+      <circle cx="101" cy="91" r="1.5" fill="#fff"/>
+      <path d="M87 100 L90 103 L93 100" fill="#e8a0a0" stroke="#e8a0a0" stroke-width="1"/>
+      <path d="M90 103 Q86 107 83 105" fill="none" stroke="#d4a0a0" stroke-width="1"/>
+      <path d="M90 103 Q94 107 97 105" fill="none" stroke="#d4a0a0" stroke-width="1"/>
+      <line x1="52" y1="96" x2="72" y2="99" stroke="#d0c8c0" stroke-width="1"/>
+      <line x1="50" y1="103" x2="73" y2="103" stroke="#d0c8c0" stroke-width="1"/>
+      <line x1="107" y1="99" x2="127" y2="96" stroke="#d0c8c0" stroke-width="1"/>
+      <line x1="107" y1="103" x2="129" y2="103" stroke="#d0c8c0" stroke-width="1"/>
+      <ellipse cx="130" cy="162" rx="10" ry="6" fill="${pawColor}" transform="rotate(-15,130,162)"/>
+    </svg>`
+  ];
+  return poses[pose % poses.length];
+}
+
+// ===== SPEECH =====
+function speak(word) {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(word);
+    u.lang = 'en-US'; u.rate = 0.85;
+    window.speechSynthesis.speak(u);
+  }
+}
+
+// ===== SCREEN MANAGEMENT =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ===== LOAD STATE =====
+async function loadState() {
+  try {
+    const doc = await db.collection('appState').doc('main').get();
+    if (doc.exists) {
+      const d = doc.data();
+      state.streak = d.streak || 0;
+      state.completedDays = d.completedDays || [];
+      state.weekCats = d.weekCats || [];
+      state.catStage = d.catStage || 0;
+    }
+  } catch(e) {
+    // Use local fallback
+    try {
+      const saved = localStorage.getItem('vocabState');
+      if (saved) Object.assign(state, JSON.parse(saved));
+    } catch(e2) {}
+  }
+}
+
+async function loadSchedule() {
+  const today = new Date().toISOString().slice(0,10);
+  try {
+    const doc = await db.collection('schedule').doc(today).get();
+    if (doc.exists) {
+      const d = doc.data();
+      state.todayType = d.type; // 'learn' | 'review' | 'rest'
+      state.currentDay = d.day || null;
+      state.reviewDays = d.reviewDays || [];
+    } else {
+      // No schedule set — determine automatically
+      autoSchedule();
+    }
+  } catch(e) {
+    autoSchedule();
+  }
+}
+
+function autoSchedule() {
+  const dow = new Date().getDay(); // 0=sun
+  const nextDay = (state.completedDays.length || 0) + 1;
+  if (nextDay > 40) {
+    state.todayType = 'rest';
+  } else if (dow >= 1 && dow <= 4) { // Mon-Thu
+    state.todayType = 'learn';
+    state.currentDay = nextDay;
+  } else { // Fri-Sun
+    state.todayType = 'review';
+    // Review last 4 days
+    const start = Math.max(1, nextDay - 4);
+    state.reviewDays = [];
+    for (let i = start; i < nextDay; i++) state.reviewDays.push(i);
+    if (state.reviewDays.length === 0) state.todayType = 'rest';
+  }
+}
+
+async function loadSavedSession() {
+  try {
+    const doc = await db.collection('sessions').doc('current').get();
+    if (doc.exists) {
+      state.savedSession = doc.data();
+    }
+  } catch(e) {
+    try {
+      const s = localStorage.getItem('vocabSession');
+      if (s) state.savedSession = JSON.parse(s);
+    } catch(e2) {}
+  }
+}
+
+function getWords(day) {
+  return SAMPLE_WORDS[day]?.words || SAMPLE_WORDS[1].words;
+}
+
+function getDayTitle(day) {
+  return SAMPLE_WORDS[day]?.title || 'Words';
+}
+
+// ===== RENDER HOME =====
+function renderHome() {
+  document.getElementById('streak-count').textContent = state.streak;
+
+  // Cat
+  document.getElementById('cat-display').innerHTML = generateCatSVG(state.catStage, state.weekCats.length % 3);
+
+  // Cat dots (this week's progress)
+  const dotsEl = document.getElementById('cat-dots');
+  dotsEl.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'cat-dot' + (i < state.catStage ? ' filled' : '');
+    dotsEl.appendChild(dot);
+  }
+
+  // Check paused
+  if (state.paused) {
+    document.getElementById('today-label').textContent = '⏸ 일시정지';
+    document.getElementById('today-title').textContent = '오늘은 쉬는 날이에요';
+    document.getElementById('start-btn').textContent = '쉬는 중 😊';
+    document.getElementById('start-btn').disabled = true;
+    return;
+  }
+
+  // Today info
+  const btn = document.getElementById('start-btn');
+  btn.disabled = false;
+  if (state.todayType === 'learn') {
+    document.getElementById('today-label').textContent = '오늘의 학습';
+    document.getElementById('today-title').textContent = `Day ${state.currentDay} – ${getDayTitle(state.currentDay)}`;
+    btn.textContent = state.savedSession ? '이어서 하기' : '시작하기';
+  } else if (state.todayType === 'review') {
+    document.getElementById('today-label').textContent = '오늘은 복습!';
+    document.getElementById('today-title').textContent = `Day ${state.reviewDays.join(', ')} 복습`;
+    btn.textContent = '복습 시작';
+  } else {
+    document.getElementById('today-label').textContent = '🎉';
+    document.getElementById('today-title').textContent = '오늘은 쉬는 날!';
+    btn.textContent = '쉬는 중 😊';
+    btn.disabled = true;
+  }
+
+  // Resume hint
+  document.getElementById('resume-hint').style.display = state.savedSession ? 'block' : 'none';
+
+  // Total progress
+  const pct = Math.round((state.completedDays.length / 40) * 100);
+  document.getElementById('total-progress').style.width = pct + '%';
+  document.getElementById('total-progress-text').textContent = `${state.completedDays.length} / 40 Days`;
+}
+
+// ===== START TODAY =====
+function startToday() {
+  if (state.todayType === 'learn') {
+    startLearning();
+  } else if (state.todayType === 'review') {
+    startReview();
+  }
+}
+
+// ===== LEARNING FLOW =====
+let learnState = { step:1, index:0, words:[], knownStatus:{}, quizResults:{} };
+
+function startLearning() {
+  const words = getWords(state.currentDay);
+  learnState = { step:1, index:0, words:words, knownStatus:{}, quizResults:{} };
+
+  // Restore saved session if exists
+  if (state.savedSession && state.savedSession.day === state.currentDay) {
+    learnState.step = state.savedSession.step || 1;
+    learnState.index = state.savedSession.index || 0;
+    learnState.knownStatus = state.savedSession.knownStatus || {};
+    learnState.quizResults = state.savedSession.quizResults || {};
+  }
+
+  showScreen('screen-study');
+  renderStep();
+}
+
+function renderStep() {
+  const steps = ['플래시카드','영어 → 뜻','뜻 → 영어','빈칸 채우기'];
+  document.getElementById('step-indicator').textContent = `${learnState.step}단계: ${steps[learnState.step-1]}`;
+  document.getElementById('step-progress').textContent = `${learnState.index + 1} / ${learnState.words.length}`;
+
+  const container = document.getElementById('study-content');
+  switch(learnState.step) {
+    case 1: renderFlashcard(container); break;
+    case 2: renderQuizEtoK(container); break;
+    case 3: renderQuizKtoE(container); break;
+    case 4: renderSpelling(container); break;
+  }
+}
+
+// Step 1: Flashcard
+function renderFlashcard(container) {
+  const w = learnState.words[learnState.index];
+  const revealed = false;
+  container.innerHTML = `
+    <div class="flashcard animate-in" id="flashcard" onclick="revealCard()">
+      <div class="flash-word">${w.en}</div>
+      <button class="sound-btn" onclick="event.stopPropagation();speak('${w.en}')">🔊</button>
+      <div class="flash-meaning" id="flash-meaning" style="visibility:hidden">${w.ko}</div>
+      <div class="flash-example" id="flash-example" style="visibility:hidden">${w.ex}</div>
+      <div class="flash-tap-hint" id="flash-hint">탭하면 뜻이 보여요</div>
+    </div>
+    <div class="flash-btns" id="flash-btns" style="display:none">
+      <button class="btn-dont-know" onclick="flashResult(false)">모르겠어요 😅</button>
+      <button class="btn-know" onclick="flashResult(true)">알고 있어요! 😊</button>
+    </div>
+  `;
+}
+
+function revealCard() {
+  document.getElementById('flash-meaning').style.visibility = 'visible';
+  document.getElementById('flash-example').style.visibility = 'visible';
+  document.getElementById('flash-hint').style.display = 'none';
+  document.getElementById('flash-btns').style.display = 'flex';
+}
+
+function flashResult(known) {
+  const w = learnState.words[learnState.index];
+  learnState.knownStatus[w.en] = known;
+  nextWord();
+}
+
+// Step 2: English → Korean quiz
+function renderQuizEtoK(container) {
+  const w = learnState.words[learnState.index];
+  const options = generateOptions(w, 'ko');
+  container.innerHTML = `
+    <div class="quiz-card animate-in">
+      <div class="quiz-sub">이 단어의 뜻은?</div>
+      <div class="quiz-question">${w.en}</div>
+      <button class="sound-btn" onclick="speak('${w.en}')" style="margin:8px auto">🔊</button>
+      <div class="quiz-options" id="quiz-options">
+        ${options.map((o,i) => `<button class="quiz-option" data-correct="${o===w.ko}" onclick="quizAnswer(this,${o===w.ko},'etok')">${o}</button>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// Step 3: Korean → English quiz
+function renderQuizKtoE(container) {
+  const w = learnState.words[learnState.index];
+  const options = generateOptions(w, 'en');
+  container.innerHTML = `
+    <div class="quiz-card animate-in">
+      <div class="quiz-sub">이 뜻에 해당하는 영어 단어는?</div>
+      <div class="quiz-question">${w.ko}</div>
+      <div class="quiz-options" id="quiz-options">
+        ${options.map((o,i) => `<button class="quiz-option" data-correct="${o===w.en}" onclick="quizAnswer(this,${o===w.en},'ktoe')">${o}</button>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function generateOptions(word, field) {
+  const correct = word[field];
+  const others = learnState.words
+    .filter(w => w[field] !== correct)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+    .map(w => w[field]);
+  const opts = [correct, ...others].sort(() => Math.random() - 0.5);
+  return opts;
+}
+
+function quizAnswer(btn, correct, type) {
+  const options = document.querySelectorAll('.quiz-option');
+  options.forEach(o => o.style.pointerEvents = 'none');
+
+  if (correct) {
+    btn.classList.add('correct');
+  } else {
+    btn.classList.add('wrong');
+    options.forEach(o => { if (o.dataset.correct === 'true') o.classList.add('reveal-correct'); });
+  }
+
+  const w = learnState.words[learnState.index];
+  if (!learnState.quizResults[w.en]) learnState.quizResults[w.en] = {};
+  learnState.quizResults[w.en][type] = correct;
+
+  setTimeout(() => nextWord(), correct ? 800 : 1500);
+}
+
+// Step 4: Spelling fill-in-blank
+function renderSpelling(container) {
+  const w = learnState.words[learnState.index];
+  const blanks = generateBlanks(w.en);
+  const letters = w.en.split('');
+
+  // Collect blank positions' letters for keyboard + some random
+  const blankLetters = blanks.map((b,i) => b ? letters[i] : null).filter(Boolean);
+  const extraLetters = 'abcdefghijklmnopqrstuvwxyz'.split('')
+    .filter(l => !blankLetters.includes(l))
+    .sort(() => Math.random() - 0.5)
+    .slice(0, Math.max(4, 10 - blankLetters.length));
+  const keyboard = [...blankLetters, ...extraLetters].sort(() => Math.random() - 0.5);
+
+  container.innerHTML = `
+    <div class="spell-card animate-in">
+      <div class="spell-meaning">${w.ko}</div>
+      <button class="sound-btn" onclick="speak('${w.en}')" style="margin-bottom:16px">🔊</button>
+      <div class="spell-blanks" id="spell-blanks">
+        ${letters.map((l,i) => `<div class="spell-letter ${blanks[i]?'blank':''}" data-index="${i}" data-letter="${l}" data-blank="${blanks[i]}">${blanks[i]?'_':l}</div>`).join('')}
+      </div>
+      <div class="spell-input-row" id="spell-keys">
+        ${keyboard.map(l => `<button class="spell-key" onclick="spellInput(this,'${l}')">${l}</button>`).join('')}
+      </div>
+    </div>
+  `;
+  window._spellCurrentBlank = 0;
+  window._spellBlanks = blanks;
+  window._spellWord = w;
+}
+
+function generateBlanks(word) {
+  // Hide ~40-50% of letters, keep first letter visible
+  const blanks = word.split('').map((l,i) => {
+    if (i === 0) return false;
+    return Math.random() < 0.45;
+  });
+  // Ensure at least 2 blanks
+  let count = blanks.filter(Boolean).length;
+  let idx = 1;
+  while (count < 2 && idx < blanks.length) {
+    if (!blanks[idx]) { blanks[idx] = true; count++; }
+    idx++;
+  }
+  return blanks;
+}
+
+function spellInput(btn, letter) {
+  const blankEls = document.querySelectorAll('.spell-letter.blank');
+  const unfilledBlanks = [...blankEls].filter(el => el.textContent === '_');
+  if (unfilledBlanks.length === 0) return;
+
+  const target = unfilledBlanks[0];
+  const correct = target.dataset.letter.toLowerCase() === letter.toLowerCase();
+
+  target.textContent = letter;
+  target.classList.add(correct ? 'filled' : 'wrong-letter');
+  btn.classList.add('used');
+
+  if (!correct) {
+    setTimeout(() => {
+      target.textContent = '_';
+      target.classList.remove('wrong-letter');
+      btn.classList.remove('used');
+    }, 600);
+    return;
+  }
+
+  // Check if all blanks filled
+  const remaining = [...blankEls].filter(el => el.textContent === '_');
+  if (remaining.length === 0) {
+    const w = window._spellWord;
+    if (!learnState.quizResults[w.en]) learnState.quizResults[w.en] = {};
+    learnState.quizResults[w.en].spell = true;
+    setTimeout(() => nextWord(), 800);
+  }
+}
+
+function nextWord() {
+  learnState.index++;
+  if (learnState.index >= learnState.words.length) {
+    learnState.index = 0;
+    learnState.step++;
+    if (learnState.step > 4) {
+      completeLearning();
+      return;
+    }
+  }
+  renderStep();
+}
+
+// ===== REVIEW FLOW =====
+let reviewState = { index:0, words:[], mode:'', totalQ:0 };
+
+function startReview() {
+  // Gather words from review days
+  let allWords = [];
+  state.reviewDays.forEach(d => {
+    const ws = getWords(d);
+    allWords = allWords.concat(ws);
+  });
+
+  // Sort: wrong words 70%, others 30%
+  // For demo, just shuffle
+  allWords.sort(() => Math.random() - 0.5);
+
+  reviewState = { index:0, words:allWords, totalQ: allWords.length, results:{} };
+  showScreen('screen-review');
+  renderReviewQuestion();
+}
+
+function renderReviewQuestion() {
+  if (reviewState.index >= reviewState.words.length) {
+    completeReview();
+    return;
+  }
+  document.getElementById('review-progress').textContent = `${reviewState.index + 1} / ${reviewState.words.length}`;
+  const container = document.getElementById('review-content');
+  const w = reviewState.words[reviewState.index];
+
+  // Randomly pick quiz type
+  const types = ['etok','ktoe','sentence'];
+  const type = types[Math.floor(Math.random() * types.length)];
+
+  if (type === 'etok') {
+    const options = generateReviewOptions(w, 'ko');
+    container.innerHTML = `
+      <div class="quiz-card animate-in">
+        <div class="quiz-sub">이 단어의 뜻은?</div>
+        <div class="quiz-question">${w.en}</div>
+        <button class="sound-btn" onclick="speak('${w.en}')" style="margin:8px auto">🔊</button>
+        <div class="quiz-options">
+          ${options.map(o => `<button class="quiz-option" data-correct="${o===w.ko}" onclick="reviewAnswer(this,${o===w.ko})">${o}</button>`).join('')}
+        </div>
+      </div>`;
+  } else if (type === 'ktoe') {
+    const options = generateReviewOptions(w, 'en');
+    container.innerHTML = `
+      <div class="quiz-card animate-in">
+        <div class="quiz-sub">이 뜻에 해당하는 단어는?</div>
+        <div class="quiz-question">${w.ko}</div>
+        <div class="quiz-options">
+          ${options.map(o => `<button class="quiz-option" data-correct="${o===w.en}" onclick="reviewAnswer(this,${o===w.en})">${o}</button>`).join('')}
+        </div>
+      </div>`;
+  } else {
+    // Sentence fill
+    const sentence = w.ex.replace(new RegExp(w.en, 'gi'), '________');
+    const options = generateReviewOptions(w, 'en');
+    container.innerHTML = `
+      <div class="sentence-card animate-in">
+        <div class="sentence-meaning" style="margin-bottom:12px;font-size:15px;color:var(--accent)">${w.ko}</div>
+        <div class="sentence-text">${sentence}</div>
+        <div class="quiz-options" style="margin-top:16px">
+          ${options.map(o => `<button class="quiz-option" data-correct="${o===w.en}" onclick="reviewAnswer(this,${o===w.en})">${o}</button>`).join('')}
+        </div>
+      </div>`;
+  }
+}
+
+function generateReviewOptions(word, field) {
+  const correct = word[field];
+  const others = reviewState.words
+    .filter(w => w[field] !== correct)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+    .map(w => w[field]);
+  return [correct, ...others].sort(() => Math.random() - 0.5);
+}
+
+function reviewAnswer(btn, correct) {
+  const options = document.querySelectorAll('.quiz-option');
+  options.forEach(o => o.style.pointerEvents = 'none');
+  if (correct) btn.classList.add('correct');
+  else {
+    btn.classList.add('wrong');
+    options.forEach(o => { if(o.dataset.correct==='true') o.classList.add('reveal-correct'); });
+  }
+  const w = reviewState.words[reviewState.index];
+  reviewState.results[w.en] = correct;
+  setTimeout(() => { reviewState.index++; renderReviewQuestion(); }, correct ? 800 : 1500);
+}
+
+// ===== COMPLETION =====
+async function completeLearning() {
+  // Update state
+  if (!state.completedDays.includes(state.currentDay)) {
+    state.completedDays.push(state.currentDay);
+  }
+  state.streak++;
+  state.catStage = Math.min(4, state.catStage + 1);
+
+  // Clear saved session
+  state.savedSession = null;
+  try { await db.collection('sessions').doc('current').delete(); } catch(e) {}
+  try { localStorage.removeItem('vocabSession'); } catch(e) {}
+
+  // Save state
+  await saveState();
+
+  // Save results to progress
+  const today = new Date().toISOString().slice(0,10);
+  try {
+    await db.collection('progress').doc(today).set({
+      date: today, day: state.currentDay, type: 'learn',
+      results: learnState.quizResults, completed: true,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) {}
+
+  // Show completion
+  showCompletionFeedback();
+}
+
+async function completeReview() {
+  state.streak++;
+  state.catStage = Math.min(4, state.catStage + 1);
+
+  // If cat fully colored, save to collection
+  if (state.catStage >= 4) {
+    state.weekCats.push({ week: state.weekCats.length + 1, pose: state.weekCats.length % 3 });
+    state.catStage = 0;
+  }
+
+  state.savedSession = null;
+  await saveState();
+
+  const today = new Date().toISOString().slice(0,10);
+  try {
+    await db.collection('progress').doc(today).set({
+      date: today, days: state.reviewDays, type: 'review',
+      results: reviewState.results, completed: true,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) {}
+
+  showCompletionFeedback();
+}
+
+function showCompletionFeedback() {
+  const msg = ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)];
+  document.getElementById('fb-emoji').textContent = '🎉';
+  document.getElementById('fb-title').textContent = '학습 완료!';
+  document.getElementById('fb-msg').textContent = msg;
+  document.getElementById('feedback-overlay').classList.add('active');
+
+  // Check for bonus (roughly 1 in 5 chance per day → ~1 per week)
+  checkBonus();
+}
+
+async function checkBonus() {
+  const roll = Math.random();
+  if (roll > 0.2) return; // ~20% chance
+
+  try {
+    const snap = await db.collection('rewards').get();
+    if (snap.empty) return;
+    const rewards = [];
+    snap.forEach(doc => rewards.push(doc.data()));
+    const reward = rewards[Math.floor(Math.random() * rewards.length)];
+
+    window._pendingBonus = reward.content;
+  } catch(e) {
+    // No bonus available
+  }
+}
+
+function closeFeedback() {
+  document.getElementById('feedback-overlay').classList.remove('active');
+  if (window._pendingBonus) {
+    setTimeout(() => {
+      document.getElementById('bonus-content').textContent = window._pendingBonus;
+      document.getElementById('bonus-overlay').classList.add('active');
+      window._pendingBonus = null;
+    }, 500);
+  } else {
+    showScreen('screen-home');
+    renderHome();
+  }
+}
+
+function closeBonus() {
+  document.getElementById('bonus-overlay').classList.remove('active');
+  showScreen('screen-home');
+  renderHome();
+}
+
+// ===== SAVE / RESUME =====
+async function saveAndExit() {
+  const session = {
+    day: state.currentDay,
+    type: state.todayType,
+    step: learnState.step,
+    index: learnState.index,
+    knownStatus: learnState.knownStatus,
+    quizResults: learnState.quizResults,
+    reviewIndex: reviewState.index,
+    savedAt: new Date().toISOString()
+  };
+
+  try {
+    await db.collection('sessions').doc('current').set(session);
+  } catch(e) {}
+  try { localStorage.setItem('vocabSession', JSON.stringify(session)); } catch(e) {}
+
+  state.savedSession = session;
+  showScreen('screen-home');
+  renderHome();
+}
+
+async function saveState() {
+  const data = {
+    streak: state.streak,
+    completedDays: state.completedDays,
+    weekCats: state.weekCats,
+    catStage: state.catStage,
+    lastStudy: new Date().toISOString().slice(0,10)
+  };
+  try {
+    await db.collection('appState').doc('main').set(data, {merge:true});
+  } catch(e) {}
+  try { localStorage.setItem('vocabState', JSON.stringify(state)); } catch(e) {}
+}
+
+// ===== GALLERY =====
+function showGallery() {
+  const grid = document.getElementById('gallery-grid');
+  if (state.weekCats.length === 0) {
+    grid.innerHTML = '<div class="gallery-empty">아직 수집한 고양이가 없어요.<br>매주 학습을 완료하면 고양이가 모여요! 🐱</div>';
+  } else {
+    grid.innerHTML = state.weekCats.map((cat, i) => `
+      <div class="gallery-item">
+        ${generateCatSVG(4, cat.pose)}
+        <div class="week-label">${i+1}주차 고양이</div>
+      </div>
+    `).join('');
+  }
+  showScreen('screen-gallery');
+}
+
+// ===== INIT =====
+async function init() {
+  await loadState();
+  await loadSchedule();
+  await loadSavedSession();
+
+  // Check pause status
+  try {
+    const doc = await db.collection('settings').doc('main').get();
+    if (doc.exists) {
+      const d = doc.data();
+      if (d.paused) {
+        // Check pauseUntil
+        if (d.pauseUntil) {
+          const until = new Date(d.pauseUntil);
+          if (new Date() < until) state.paused = true;
+        } else {
+          state.paused = true;
+        }
+      }
+    }
+  } catch(e) {}
+
+  renderHome();
+}
+
+// PWA registration
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+init();
+</script>
+</body>
+</html>
