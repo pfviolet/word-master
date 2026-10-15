@@ -296,7 +296,7 @@ body{max-width:640px;margin:0 auto;padding:16px;padding-bottom:100px}
   <div class="upload-area" onclick="document.getElementById('csv-file').click()">
     <div class="icon">📄</div>
     <div class="label">CSV 파일 업로드</div>
-    <div class="hint">형식: Day번호, 제목, 영어, 뜻, 예문 (헤더 포함)</div>
+    <div class="hint">형식: Day번호, 제목, 영어, 품사, 뜻, 예문, 예문해석 (헤더 포함)</div>
     <input type="file" id="csv-file" accept=".csv,.txt" onchange="handleCSV(event)">
   </div>
 
@@ -314,8 +314,10 @@ body{max-width:640px;margin:0 auto;padding:16px;padding-bottom:100px}
     <div style="font-size:14px;font-weight:700;margin-bottom:10px">새 단어 추가</div>
     <div class="add-form">
       <input id="new-en" placeholder="영어 단어">
+      <input id="new-pos" placeholder="품사 (명/동/형/부/전)">
       <input id="new-ko" placeholder="한국어 뜻">
       <input id="new-ex" class="full" placeholder="예문 (영어)">
+      <input id="new-ex-ko" class="full" placeholder="예문 해석 (한국어)">
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-secondary btn-sm" onclick="hideAddWord()">취소</button>
@@ -407,8 +409,10 @@ body{max-width:640px;margin:0 auto;padding:16px;padding-bottom:100px}
     <div class="modal-title">단어 수정</div>
     <div class="add-form">
       <input id="edit-en" placeholder="영어 단어">
+      <input id="edit-pos" placeholder="품사 (명/동/형/부/전)">
       <input id="edit-ko" placeholder="한국어 뜻">
       <input id="edit-ex" class="full" placeholder="예문 (영어)">
+      <input id="edit-ex-ko" class="full" placeholder="예문 해석 (한국어)">
     </div>
     <div class="modal-btns">
       <button class="btn btn-secondary btn-sm" onclick="closeEditModal()">취소</button>
@@ -439,7 +443,7 @@ const db = firebase.firestore();
 // ===== STATE =====
 let appState = { streak:0, completedDays:[], weekCats:[], catStage:0 };
 let scheduleData = {};    // { 'YYYY-MM-DD': {type, day?, reviewDays?} }
-let wordsData = {};       // { dayNum: {title, words:[{en,ko,ex}]} }
+let wordsData = {};       // { dayNum: {title, words:[{en,ko,pos,ex,ex_ko}]} }
 let progressData = [];    // [{date,day,type,results,completed}]
 let rewardsData = [];     // [{id,content}]
 let settingsData = {};    // {paused, pauseUntil}
@@ -843,12 +847,13 @@ function renderWordTable() {
   container.innerHTML = `
     <div class="word-table-wrap">
       <table class="word-table">
-        <thead><tr><th>#</th><th>영어</th><th>뜻</th><th>예문</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>영어</th><th>품사</th><th>뜻</th><th>예문</th><th></th></tr></thead>
         <tbody>
           ${data.words.map((w, i) => `
             <tr>
               <td style="color:var(--sub)">${i+1}</td>
               <td style="font-weight:600">${w.en}</td>
+              <td style="color:var(--sub);font-size:12px">${w.pos || ''}</td>
               <td>${w.ko}</td>
               <td style="font-size:12px;color:var(--sub);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${w.ex || ''}</td>
               <td>
@@ -878,8 +883,10 @@ async function saveDayTitle() {
 function showAddWord() {
   document.getElementById('add-word-form').style.display = 'block';
   document.getElementById('new-en').value = '';
+  document.getElementById('new-pos').value = '';
   document.getElementById('new-ko').value = '';
   document.getElementById('new-ex').value = '';
+  document.getElementById('new-ex-ko').value = '';
   document.getElementById('new-en').focus();
 }
 
@@ -890,12 +897,14 @@ function hideAddWord() {
 async function addWord() {
   if (currentWordDay === null) { toast('Day를 먼저 선택해주세요'); return; }
   const en = document.getElementById('new-en').value.trim();
+  const pos = document.getElementById('new-pos').value.trim();
   const ko = document.getElementById('new-ko').value.trim();
   const ex = document.getElementById('new-ex').value.trim();
+  const ex_ko = document.getElementById('new-ex-ko').value.trim();
   if (!en || !ko) { toast('영어와 뜻을 입력해주세요'); return; }
 
   if (!wordsData[currentWordDay]) wordsData[currentWordDay] = { title: '', words: [] };
-  wordsData[currentWordDay].words.push({ en, ko, ex });
+  wordsData[currentWordDay].words.push({ en, ko, pos, ex, ex_ko });
   await saveWordDay(currentWordDay);
   renderWordTable();
   hideAddWord();
@@ -906,8 +915,10 @@ function editWord(index) {
   editingWordIndex = index;
   const w = wordsData[currentWordDay].words[index];
   document.getElementById('edit-en').value = w.en;
+  document.getElementById('edit-pos').value = w.pos || '';
   document.getElementById('edit-ko').value = w.ko;
   document.getElementById('edit-ex').value = w.ex || '';
+  document.getElementById('edit-ex-ko').value = w.ex_ko || '';
   document.getElementById('edit-modal').classList.add('active');
 }
 
@@ -917,11 +928,13 @@ function closeEditModal() {
 
 async function saveEditWord() {
   const en = document.getElementById('edit-en').value.trim();
+  const pos = document.getElementById('edit-pos').value.trim();
   const ko = document.getElementById('edit-ko').value.trim();
   const ex = document.getElementById('edit-ex').value.trim();
+  const ex_ko = document.getElementById('edit-ex-ko').value.trim();
   if (!en || !ko) { toast('영어와 뜻을 입력해주세요'); return; }
 
-  wordsData[currentWordDay].words[editingWordIndex] = { en, ko, ex };
+  wordsData[currentWordDay].words[editingWordIndex] = { en, ko, pos, ex, ex_ko };
   await saveWordDay(currentWordDay);
   renderWordTable();
   closeEditModal();
@@ -957,23 +970,25 @@ function handleCSV(event) {
     const hasHeader = firstLine.includes('day') || firstLine.includes('영어') || firstLine.includes('english');
     const dataLines = hasHeader ? lines.slice(1) : lines;
 
-    // Parse: day, title, english, korean, example
+    // Parse: day, title, english, pos, korean, example, example_ko
     const dayMap = {};
     let parsed = 0;
     dataLines.forEach(line => {
       const cols = parseCSVLine(line);
-      if (cols.length < 4) return;
+      if (cols.length < 5) return;
       const dayNum = parseInt(cols[0]);
       if (isNaN(dayNum)) return;
       const title = cols[1].trim();
       const en = cols[2].trim();
-      const ko = cols[3].trim();
-      const ex = (cols[4] || '').trim();
+      const pos = cols[3].trim();
+      const ko = cols[4].trim();
+      const ex = (cols[5] || '').trim();
+      const ex_ko = (cols[6] || '').trim();
       if (!en || !ko) return;
 
       if (!dayMap[dayNum]) dayMap[dayNum] = { title: title, words: [] };
       if (title && !dayMap[dayNum].title) dayMap[dayNum].title = title;
-      dayMap[dayNum].words.push({ en, ko, ex });
+      dayMap[dayNum].words.push({ en, ko, pos, ex, ex_ko });
       parsed++;
     });
 
