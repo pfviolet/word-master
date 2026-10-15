@@ -171,6 +171,7 @@ body{display:flex;flex-direction:column;max-width:520px;margin:0 auto;position:r
 
   <div id="resume-hint" class="resume-hint" style="display:none">이어서 하기 — 저장된 진행이 있어요</div>
   <button class="start-btn" id="start-btn" onclick="startToday()">시작하기</button>
+  <button class="start-btn" id="restart-btn" style="display:none;background:#e8e0d6;color:#6b5c4d;margin-top:8px;font-size:14px" onclick="restartToday()">처음부터 다시하기</button>
 </div>
 
 <!-- ========== STUDY SCREEN ========== -->
@@ -573,11 +574,13 @@ function renderHome() {
 
   // Resume hint
   document.getElementById('resume-hint').style.display = state.savedSession ? 'block' : 'none';
+  document.getElementById('restart-btn').style.display = state.savedSession ? 'block' : 'none';
 
   // Total progress
-  const pct = Math.round((state.completedDays.length / 40) * 100);
+  const totalDays = Object.keys(wordsData).length || 40;
+  const pct = Math.round((state.completedDays.length / totalDays) * 100);
   document.getElementById('total-progress').style.width = pct + '%';
-  document.getElementById('total-progress-text').textContent = `${state.completedDays.length} / 40 Days`;
+  document.getElementById('total-progress-text').textContent = `${state.completedDays.length} / ${totalDays} Days`;
 }
 
 // ===== START TODAY =====
@@ -587,6 +590,15 @@ function startToday() {
   } else if (state.todayType === 'review') {
     startReview();
   }
+}
+
+async function restartToday() {
+  if (!confirm('처음부터 다시 시작할까요? 저장된 진행이 사라져요.')) return;
+  state.savedSession = null;
+  try {
+    await db.collection('sessions').doc('current').delete();
+  } catch(e) {}
+  startToday();
 }
 
 // ===== LEARNING FLOW =====
