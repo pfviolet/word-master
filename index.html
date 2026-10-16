@@ -584,25 +584,6 @@ async function loadState() {
       const d = doc.data();
       state.streak = d.streak || 0;
       state.completedDays = d.completedDays || [];
-      // Recover completedDays from progress collection if empty
-      if (state.completedDays.length === 0) {
-        try {
-          const snap = await db.collection('progress')
-            .where('type', '==', 'learn')
-            .where('completed', '==', true)
-            .get();
-          const recovered = [];
-          snap.forEach(doc => {
-            const data = doc.data();
-            if (data.day && !recovered.includes(data.day)) recovered.push(data.day);
-          });
-          if (recovered.length > 0) {
-            state.completedDays = recovered.sort((a,b) => a - b);
-            // Save recovered data back
-            try { await db.collection('appState').doc('main').update({ completedDays: state.completedDays }); } catch(e2) {}
-          }
-        } catch(e) {}
-      }
       state.catStage = d.catStage || 0;
       state.currentBreed = d.currentBreed || null;
       state.catCollection = d.catCollection || {};
@@ -610,6 +591,24 @@ async function loadState() {
       if (d.weekCats && d.weekCats.length > 0 && Object.keys(state.catCollection).length === 0) {
         state.catCollection['siamese'] = { name: '샴이', poses: d.weekCats.map((_,i) => i % 3) };
         state.weekCats = [];
+      }
+      // 고양이 품종 복구: Firestore에서 품종이 누락됐지만 진행 중인 경우 localStorage에서 복구
+      if (state.catStage > 0 && !state.currentBreed) {
+        try {
+          const saved = localStorage.getItem('vocabState');
+          if (saved) {
+            const local = JSON.parse(saved);
+            if (local.currentBreed) {
+              state.currentBreed = local.currentBreed;
+              console.log('고양이 품종 localStorage에서 복구:', state.currentBreed);
+            }
+          }
+        } catch(e2) {}
+        // localStorage에도 없으면 새 품종 배정 (진행도는 유지)
+        if (!state.currentBreed) {
+          state.currentBreed = pickBreed();
+          console.log('고양이 품종 재배정:', state.currentBreed);
+        }
       }
     }
   } catch(e) {
@@ -671,7 +670,15 @@ async function loadSavedSession() {
 }
 
 function getWords(day) {
-  return firestoreWords[day]?.words || SAMPLE_WORDS[day]?.words || SAMPLE_WORDS[1].words;
+  let words = firestoreWords[day]?.words || SAMPLE_WORDS[day]?.words || SAMPLE_WORDS[1].words;
+  // 중복 제거 (영어 단어 기준)
+  const seen = new Set();
+  words = words.filter(w => {
+    if (seen.has(w.en)) return false;
+    seen.add(w.en);
+    return true;
+  });
+  return words;
 }
 
 function getDayTitle(day) {
@@ -1359,10 +1366,13 @@ async function saveState() {
     catCollection: state.catCollection || {},
     lastStudy: new Date().toISOString().slice(0,10)
   };
+  // localStorage 먼저 저장 (백업 — Firestore 실패 시에도 품종 보존)
+  try { localStorage.setItem('vocabState', JSON.stringify(state)); } catch(e) {}
   try {
     await db.collection('appState').doc('main').set(data, {merge:true});
-  } catch(e) {}
-  try { localStorage.setItem('vocabState', JSON.stringify(state)); } catch(e) {}
+  } catch(e) {
+    console.error('Firestore 저장 실패:', e);
+  }
 }
 
 // ===== GALLERY =====
@@ -1418,6 +1428,14 @@ async function loadWords() {
 async function init() {
   await loadWords();
   await loadState();
+
+  // 1회성 데이터 복구: 페르시안→샴고양이 2단계로 복원 (2026-10-16)
+  if (!localStorage.getItem('catFix_20261016') && state.currentBreed === 'persian' && state.catStage === 2) {
+    state.currentBreed = 'siamese';
+    await saveState();
+    localStorage.setItem('catFix_20261016', 'done');
+  }
+
   await loadSchedule();
   await loadSavedSession();
 
