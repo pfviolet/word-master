@@ -604,11 +604,11 @@ async function restartToday() {
 }
 
 // ===== LEARNING FLOW =====
-let learnState = { step:1, index:0, words:[], knownStatus:{}, quizResults:{} };
+let learnState = { step:1, index:0, words:[], allWords:[], knownStatus:{}, quizResults:{}, retryMode:false, wrongThisStep:[] };
 
 function startLearning() {
   const words = getWords(state.currentDay);
-  learnState = { step:1, index:0, words:words, knownStatus:{}, quizResults:{} };
+  learnState = { step:1, index:0, words:words, allWords:words, knownStatus:{}, quizResults:{}, retryMode:false, wrongThisStep:[] };
 
   // Restore saved session if exists
   if (state.savedSession && state.savedSession.day === state.currentDay) {
@@ -616,6 +616,11 @@ function startLearning() {
     learnState.index = state.savedSession.index || 0;
     learnState.knownStatus = state.savedSession.knownStatus || {};
     learnState.quizResults = state.savedSession.quizResults || {};
+    learnState.retryMode = state.savedSession.retryMode || false;
+    // Step 5에서 복원 시 단어 재선정
+    if (learnState.step === 5) {
+      learnState.words = selectSentenceFillWords();
+    }
   }
 
   showScreen('screen-study');
@@ -623,8 +628,8 @@ function startLearning() {
 }
 
 function renderStep() {
-  const steps = ['플래시카드','영어 → 뜻','뜻 → 영어','빈칸 채우기'];
-  document.getElementById('step-indicator').textContent = `${learnState.step}단계: ${steps[learnState.step-1]}`;
+  const steps = ['플래시카드','영어 → 뜻','뜻 → 영어','빈칸 채우기','예문 퀴즈'];
+  document.getElementById('step-indicator').textContent = `${learnState.step}단계: ${steps[learnState.step-1]}${learnState.retryMode ? ' (다시풀기)' : ''}`;
   document.getElementById('step-progress').textContent = `${learnState.index + 1} / ${learnState.words.length}`;
 
   const container = document.getElementById('study-content');
@@ -633,13 +638,13 @@ function renderStep() {
     case 2: renderQuizEtoK(container); break;
     case 3: renderQuizKtoE(container); break;
     case 4: renderSpelling(container); break;
+    case 5: renderSentenceFill(container); break;
   }
 }
 
 // Step 1: Flashcard
 function renderFlashcard(container) {
   const w = learnState.words[learnState.index];
-  const revealed = false;
   container.innerHTML = `
     <div class="flashcard animate-in" id="flashcard" onclick="revealCard()">
       <div class="flash-word">${w.en}</div>
@@ -653,6 +658,8 @@ function renderFlashcard(container) {
       <button class="btn-know" onclick="flashResult(true)">알고 있어요! 😊</button>
     </div>
   `;
+  // 자동 발음
+  setTimeout(() => speak(w.en), 300);
 }
 
 function revealCard() {
@@ -725,6 +732,11 @@ function quizAnswer(btn, correct, type) {
   if (!learnState.quizResults[w.en]) learnState.quizResults[w.en] = {};
   learnState.quizResults[w.en][type] = correct;
 
+  // 틀린 문제 기록 (재시도용)
+  if (!correct && !learnState.retryMode) {
+    learnState.wrongThisStep.push(w);
+  }
+
   setTimeout(() => nextWord(), correct ? 800 : 1500);
 }
 
@@ -757,6 +769,7 @@ function renderSpelling(container) {
   window._spellCurrentBlank = 0;
   window._spellBlanks = blanks;
   window._spellWord = w;
+  window._spellMistakes = 0;
 }
 
 function generateBlanks(word) {
@@ -788,6 +801,7 @@ function spellInput(btn, letter) {
   btn.classList.add('used');
 
   if (!correct) {
+    window._spellMistakes++;
     setTimeout(() => {
       target.textContent = '_';
       target.classList.remove('wrong-letter');
@@ -801,22 +815,103 @@ function spellInput(btn, letter) {
   if (remaining.length === 0) {
     const w = window._spellWord;
     if (!learnState.quizResults[w.en]) learnState.quizResults[w.en] = {};
-    learnState.quizResults[w.en].spell = true;
+    learnState.quizResults[w.en].spell = window._spellMistakes === 0;
+    // 틀린 적 있으면 재시도 목록에 추가
+    if (window._spellMistakes > 0 && !learnState.retryMode) {
+      learnState.wrongThisStep.push(w);
+    }
     setTimeout(() => nextWord(), 800);
   }
+}
+
+// Step 5: Sentence Fill-in-the-blank
+function renderSentenceFill(container) {
+  const w = learnState.words[learnState.index];
+  // 예문에서 영어 단어를 빈칸으로 교체 (대소문자 무시)
+  const regex = new RegExp(w.en.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+  const sentence = w.ex.replace(regex, '________');
+  // 만약 빈칸이 안 만들어졌으면 (단어 형태가 다를 수 있음) 첫 단어를 빈칸으로
+  const finalSentence = sentence.includes('________') ? sentence : w.ex.replace(/\S+/, '________');
+
+  const options = generateOptions(w, 'en');
+  container.innerHTML = `
+    <div class="sentence-card animate-in">
+      <div class="quiz-sub">빈칸에 알맞은 단어를 고르세요</div>
+      <div class="sentence-text" style="font-size:17px;line-height:1.6;margin:16px 0;padding:16px;background:var(--bg);border-radius:12px">${finalSentence}${w.ex_ko ? '<div style="margin-top:8px;font-size:13px;color:var(--sub)">'+w.ex_ko+'</div>' : ''}</div>
+      <div class="sentence-meaning" style="margin-bottom:12px;font-size:14px;color:var(--sub)">💡 ${w.pos ? '<span style="color:#b07c4a;margin-right:4px">'+w.pos+'</span>' : ''}${w.ko}</div>
+      <div class="quiz-options" id="quiz-options">
+        ${options.map(o => `<button class="quiz-option" data-correct="${o===w.en}" onclick="quizAnswer(this,${o===w.en},'sentence')">${o}</button>`).join('')}
+      </div>
+    </div>
+  `;
 }
 
 function nextWord() {
   learnState.index++;
   if (learnState.index >= learnState.words.length) {
+    // Step 1: "몰라요" 단어 다시 보기
+    if (learnState.step === 1 && !learnState.retryMode) {
+      const unknowns = learnState.words.filter(w => learnState.knownStatus[w.en] === false);
+      if (unknowns.length > 0) {
+        learnState.retryMode = true;
+        learnState.words = unknowns;
+        learnState.index = 0;
+        renderStep();
+        return;
+      }
+    }
+    // Steps 2,3,4: 틀린 문제 다시 풀기
+    if (learnState.step >= 2 && learnState.step <= 4 && !learnState.retryMode) {
+      if (learnState.wrongThisStep.length > 0) {
+        learnState.retryMode = true;
+        learnState.words = [...learnState.wrongThisStep];
+        learnState.wrongThisStep = [];
+        learnState.index = 0;
+        renderStep();
+        return;
+      }
+    }
+
+    // 다음 단계로 이동
+    learnState.retryMode = false;
+    learnState.wrongThisStep = [];
+    learnState.words = learnState.allWords; // 원래 단어 목록 복원
     learnState.index = 0;
     learnState.step++;
-    if (learnState.step > 4) {
+    if (learnState.step > 5) {
       completeLearning();
       return;
     }
+    // Step 5는 별도 단어 선정
+    if (learnState.step === 5) {
+      learnState.words = selectSentenceFillWords();
+    }
   }
   renderStep();
+}
+
+// Step 5용 단어 선정: 몰랐던 단어 + 난이도 있는 단어 중심 8문제
+function selectSentenceFillWords() {
+  const all = learnState.allWords.filter(w => w.ex && w.ex.length > 0);
+  if (all.length === 0) return learnState.allWords.slice(0, 8);
+
+  // 점수 매기기: 몰랐던 단어, 퀴즈에서 틀린 단어, 긴 단어(난이도) 우선
+  const scored = all.map(w => {
+    let score = 0;
+    if (learnState.knownStatus[w.en] === false) score += 10; // 몰라요 체크
+    const results = learnState.quizResults[w.en] || {};
+    if (results.etok === false) score += 5;
+    if (results.ktoe === false) score += 5;
+    if (results.spell === false) score += 5;
+    // 긴 단어 = 더 어려움
+    score += Math.min(5, Math.floor(w.en.length / 2));
+    // 약간의 랜덤
+    score += Math.random() * 3;
+    return { word: w, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, Math.min(8, scored.length)).map(s => s.word).sort(() => Math.random() - 0.5);
 }
 
 // ===== REVIEW FLOW =====
@@ -1024,6 +1119,7 @@ async function saveAndExit() {
     index: learnState.index,
     knownStatus: learnState.knownStatus,
     quizResults: learnState.quizResults,
+    retryMode: learnState.retryMode,
     reviewIndex: reviewState.index,
     savedAt: new Date().toISOString()
   };
