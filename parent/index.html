@@ -494,12 +494,28 @@ async function loadSchedule() {
 
 async function loadWords() {
   wordsData = {};
+  let cleaned = false;
   try {
     const snap = await db.collection('words').get();
     snap.forEach(doc => {
       const d = doc.data();
+      // 중복 단어 자동 정리
+      if (d.words && d.words.length > 0) {
+        const seen = new Set();
+        const unique = d.words.filter(w => {
+          if (seen.has(w.en)) return false;
+          seen.add(w.en);
+          return true;
+        });
+        if (unique.length < d.words.length) {
+          d.words = unique;
+          db.collection('words').doc(doc.id).set(d);
+          cleaned = true;
+        }
+      }
       wordsData[doc.id] = d;
     });
+    if (cleaned) console.log('중복 단어 자동 정리 완료');
   } catch(e) { console.error('loadWords:', e); }
   populateDaySelector();
 }
@@ -997,10 +1013,9 @@ function handleCSV(event) {
     // Save to Firestore
     const batch = db.batch();
     Object.entries(dayMap).forEach(([day, data]) => {
-      // Merge with existing
+      // Replace existing (덮어쓰기)
       if (wordsData[day]) {
         data.title = data.title || wordsData[day].title;
-        data.words = [...(wordsData[day].words || []), ...data.words];
       }
       wordsData[day] = data;
       batch.set(db.collection('words').doc(String(day)), data);
@@ -1145,7 +1160,8 @@ async function confirmReset() {
 
   try {
     await db.collection('appState').doc('main').set({
-      streak: 0, completedDays: [], weekCats: [], catStage: 0, lastStudy: null
+      streak: 0, completedDays: [], weekCats: [], catStage: 0,
+      currentBreed: null, catCollection: {}, lastStudy: null
     });
     // Delete progress docs
     const snap = await db.collection('progress').get();
@@ -1156,7 +1172,7 @@ async function confirmReset() {
     // Delete session
     try { await db.collection('sessions').doc('current').delete(); } catch(e) {}
 
-    appState = { streak: 0, completedDays: [], weekCats: [], catStage: 0 };
+    appState = { streak: 0, completedDays: [], weekCats: [], catStage: 0, currentBreed: null, catCollection: {} };
     progressData = [];
     renderDashboard();
     renderPause();
