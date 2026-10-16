@@ -587,16 +587,18 @@ async function loadState() {
       // Recover completedDays from progress collection if empty
       if (state.completedDays.length === 0) {
         try {
-          const snap = await db.collection('progress').get();
+          const snap = await db.collection('progress')
+            .where('type', '==', 'learn')
+            .where('completed', '==', true)
+            .get();
           const recovered = [];
           snap.forEach(doc => {
             const data = doc.data();
-            if (data.type === 'learn' && data.completed && data.day && !recovered.includes(data.day)) {
-              recovered.push(data.day);
-            }
+            if (data.day && !recovered.includes(data.day)) recovered.push(data.day);
           });
           if (recovered.length > 0) {
             state.completedDays = recovered.sort((a,b) => a - b);
+            // Save recovered data back
             try { await db.collection('appState').doc('main').update({ completedDays: state.completedDays }); } catch(e2) {}
           }
         } catch(e) {}
