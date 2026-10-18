@@ -1282,15 +1282,18 @@ async function completeReview() {
   showCompletionFeedback(catComplete);
 }
 
-function showCompletionFeedback(catComplete = false) {
+async function showCompletionFeedback(catComplete = false) {
   window._catComplete = catComplete;
+  window._pendingBonus = null;
+
+  // 보상 체크를 먼저 완료한 후 팝업 표시
+  if (!catComplete) await checkBonus();
+
   const msg = ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)];
   document.getElementById('fb-emoji').textContent = catComplete ? '🐱' : '🎉';
   document.getElementById('fb-title').textContent = catComplete ? '고양이 완성!' : '학습 완료!';
   document.getElementById('fb-msg').textContent = catComplete ? '새 고양이를 입양해요!' : msg;
   document.getElementById('feedback-overlay').classList.add('active');
-
-  if (!catComplete) checkBonus();
 }
 
 async function checkBonus() {
