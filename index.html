@@ -1234,8 +1234,17 @@ async function confirmCatName() {
     }, 300);
   }
 
-  showScreen('screen-home');
-  renderHome();
+  // 고양이 완성일에도 보상 표시
+  if (window._pendingBonus) {
+    setTimeout(() => {
+      document.getElementById('bonus-content').textContent = window._pendingBonus;
+      document.getElementById('bonus-overlay').classList.add('active');
+      window._pendingBonus = null;
+    }, 500);
+  } else {
+    showScreen('screen-home');
+    renderHome();
+  }
 }
 
 async function completeLearning() {
@@ -1286,8 +1295,8 @@ async function showCompletionFeedback(catComplete = false) {
   window._catComplete = catComplete;
   window._pendingBonus = null;
 
-  // 보상 체크를 먼저 완료한 후 팝업 표시
-  if (!catComplete) await checkBonus();
+  // 보상 체크를 먼저 완료한 후 팝업 표시 (고양이 완성일에도 체크)
+  await checkBonus();
 
   const msg = ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)];
   document.getElementById('fb-emoji').textContent = catComplete ? '🐱' : '🎉';
