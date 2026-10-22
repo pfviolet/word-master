@@ -1317,6 +1317,14 @@ async function checkBonus() {
     const reward = rewards[Math.floor(Math.random() * rewards.length)];
 
     window._pendingBonus = reward.content;
+    // 보상 이력 Firestore에 기록
+    try {
+      await db.collection('rewardHistory').add({
+        content: reward.content,
+        date: new Date().toISOString().slice(0,10),
+        timestamp: new Date().toISOString()
+      });
+    } catch(e2) { console.error('보상 이력 저장 실패:', e2); }
   } catch(e) {
     // No bonus available
   }
