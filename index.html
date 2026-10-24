@@ -976,8 +976,8 @@ function spellInput(btn, letter) {
     const w = window._spellWord;
     if (!learnState.quizResults[w.en]) learnState.quizResults[w.en] = {};
     learnState.quizResults[w.en].spell = window._spellMistakes === 0;
-    // 틀린 적 있으면 재시도 목록에 추가
-    if (window._spellMistakes > 0 && !learnState.retryMode) {
+    // 3번 이상 틀린 단어만 재시도 목록에 추가
+    if (window._spellMistakes >= 3 && !learnState.retryMode) {
       learnState.wrongThisStep.push(w);
     }
     setTimeout(() => nextWord(), 800);
