@@ -1177,7 +1177,8 @@ async function saveStreak() {
   const streak = parseInt(document.getElementById('streak-edit').value) || 0;
   appState.streak = streak;
   try {
-    await db.collection('appState').doc('main').set(appState, { merge: true });
+    // streak 필드만 업데이트 (다른 필드 덮어쓰기 방지)
+    await db.collection('appState').doc('main').update({ streak: streak });
     toast('연속 기록 수정됨');
     renderDashboard();
   } catch(e) { toast('저장 실패: ' + e.message); }
@@ -1234,6 +1235,17 @@ async function init() {
     loadSettings(),
     loadRewardHistory()
   ]);
+
+  // completedDays 복구: progress 기록은 있는데 completedDays가 비어있으면 자동 복구
+  const learnRecords = progressData.filter(p => p.type === 'learn' && p.completed && p.day);
+  if (learnRecords.length > 0 && (!appState.completedDays || appState.completedDays.length === 0)) {
+    const recoveredDays = [...new Set(learnRecords.map(p => p.day))].sort((a,b) => a - b);
+    appState.completedDays = recoveredDays;
+    try {
+      await db.collection('appState').doc('main').update({ completedDays: recoveredDays });
+      console.log('completedDays 복구:', recoveredDays);
+    } catch(e) { console.error('completedDays 복구 실패:', e); }
+  }
 
   renderDashboard();
   renderCalendar();
