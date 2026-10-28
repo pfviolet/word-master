@@ -619,8 +619,14 @@ async function loadState() {
   }
 }
 
+// 로컬 시간대 기준 오늘 날짜 (YYYY-MM-DD)
+function getLocalToday() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+}
+
 async function loadSchedule() {
-  const today = new Date().toISOString().slice(0,10);
+  const today = getLocalToday();
   try {
     const doc = await db.collection('schedule').doc(today).get();
     if (doc.exists) {
@@ -1260,7 +1266,7 @@ async function completeLearning() {
 
   await saveState();
 
-  const today = new Date().toISOString().slice(0,10);
+  const today = getLocalToday();
   try {
     await db.collection('progress').doc(today).set({
       date: today, day: state.currentDay, type: 'learn',
@@ -1279,7 +1285,7 @@ async function completeReview() {
   state.savedSession = null;
   await saveState();
 
-  const today = new Date().toISOString().slice(0,10);
+  const today = getLocalToday();
   try {
     await db.collection('progress').doc(today).set({
       date: today, days: state.reviewDays, type: 'review',
@@ -1321,7 +1327,7 @@ async function checkBonus() {
     try {
       await db.collection('rewardHistory').add({
         content: reward.content,
-        date: new Date().toISOString().slice(0,10),
+        date: getLocalToday(),
         timestamp: new Date().toISOString()
       });
     } catch(e2) { console.error('보상 이력 저장 실패:', e2); }
@@ -1384,7 +1390,7 @@ async function saveState() {
     catStage: state.catStage,
     currentBreed: state.currentBreed || null,
     catCollection: state.catCollection || {},
-    lastStudy: new Date().toISOString().slice(0,10)
+    lastStudy: getLocalToday()
   };
   // localStorage 먼저 저장 (백업 — Firestore 실패 시에도 품종 보존)
   try { localStorage.setItem('vocabState', JSON.stringify(state)); } catch(e) {}
