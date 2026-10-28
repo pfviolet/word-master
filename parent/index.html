@@ -440,6 +440,12 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// 로컬 시간대 기준 날짜 (YYYY-MM-DD)
+function getLocalDate(d) {
+  d = d || new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 // ===== STATE =====
 let appState = { streak:0, completedDays:[], weekCats:[], catStage:0 };
 let scheduleData = {};    // { 'YYYY-MM-DD': {type, day?, reviewDays?} }
@@ -660,7 +666,7 @@ function renderMissedWords() {
 // ===== CALENDAR / SCHEDULE =====
 function renderCalendar() {
   const today = new Date();
-  const todayStr = today.toISOString().slice(0,10);
+  const todayStr = getLocalDate(today);
 
   const label = `${calYear}년 ${calMonth + 1}월`;
   document.getElementById('cal-month-label').textContent = label;
@@ -805,7 +811,7 @@ async function generateBulkSchedule() {
   for (let i = 0; i < totalCalDays; i++) {
     const d = new Date(startDate);
     d.setDate(d.getDate() + i);
-    const dateStr = d.toISOString().slice(0,10);
+    const dateStr = getLocalDate(d);
     const dow = d.getDay();
     const ref = db.collection('schedule').doc(dateStr);
 
@@ -1217,7 +1223,7 @@ async function init() {
   const now = new Date();
   calYear = now.getFullYear();
   calMonth = now.getMonth();
-  document.getElementById('bulk-start').value = now.toISOString().slice(0,10);
+  document.getElementById('bulk-start').value = getLocalDate(now);
 
   await Promise.all([
     loadAppState(),
